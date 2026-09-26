@@ -1,3 +1,17 @@
+# Rede Estudantil
+
+Rede social open source voltada à comunidade estudantil, construída sobre o Misskey.
+
+O projeto está em desenvolvimento e terá identidade visual, experiência de uso e funcionalidades adaptadas ao contexto estudantil.
+
+- [Configuração do ambiente local](./docs/CONFIGURACAO_LOCAL.md)
+- [Repositório original do Misskey](https://github.com/misskey-dev/misskey)
+
+> A Rede Estudantil é um projeto independente e não representa oficialmente nenhuma instituição de ensino.
+
+---
+
+
 <div align="center">
 <a href="https://misskey-hub.net">
 	<img src="./assets/title_float.svg" alt="Misskey logo" style="border-radius:50%" width="300"/>
