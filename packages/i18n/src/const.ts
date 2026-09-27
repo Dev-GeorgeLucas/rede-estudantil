@@ -22,6 +22,7 @@ export const languages = [
 	'nl-NL',
 	'no-NO',
 	'pl-PL',
+	'pt-BR',
 	'pt-PT',
 	'ru-RU',
 	'sk-SK',
@@ -37,5 +38,6 @@ export const languages = [
 export const primaries = {
 	'en': 'US',
 	'ja': 'JP',
+	'pt': 'BR',
 	'zh': 'CN',
 } as const satisfies Record<string, string>;
