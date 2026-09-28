@@ -373,6 +373,10 @@ export interface Locale extends ILocale {
      */
     "note": string;
     /**
+     * 投稿
+     */
+    "post": string;
+    /**
      * ノート
      */
     "notes": string;
@@ -3192,6 +3196,10 @@ export interface Locale extends ILocale {
      * 実験的機能
      */
     "experimentalFeatures": string;
+    /**
+     * 触覚フィードバックを有効にする
+     */
+    "enableHapticFeedback": string;
     /**
      * 実験的
      */
@@ -6301,6 +6309,10 @@ export interface Locale extends ILocale {
          * プロファイルの管理
          */
         "manageProfiles": string;
+        /**
+         * プロファイルをテキストとしてコピー
+         */
+        "copyProfileAsText": string;
         /**
          * 複数のデバイスで同一のプロファイルを共有することは推奨しません。
          */
@@ -13021,6 +13033,14 @@ export interface Locale extends ILocale {
          * エフェクト
          */
         "title": string;
+        /**
+         * 適用前
+         */
+        "before": string;
+        /**
+         * 適用後
+         */
+        "after": string;
         /**
          * エフェクトを追加
          */

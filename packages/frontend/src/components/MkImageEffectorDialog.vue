@@ -25,8 +25,8 @@ SPDX-License-Identifier: AGPL-3.0-only
 					<button class="_button" :class="[$style.previewControlsButton, penMode != null ? $style.active : null]" @click="showPenMenu"><i class="ti ti-pencil"></i></button>
 				</div>
 				<div class="_acrylic" :class="$style.previewControls">
-					<button class="_button" :class="[$style.previewControlsButton, !enabled ? $style.active : null]" @click="enabled = false">Before</button>
-					<button class="_button" :class="[$style.previewControlsButton, enabled ? $style.active : null]" @click="enabled = true">After</button>
+					<button class="_button" :class="[$style.previewControlsButton, !enabled ? $style.active : null]" @click="enabled = false">{{ i18n.ts._imageEffector.before }}</button>
+					<button class="_button" :class="[$style.previewControlsButton, enabled ? $style.active : null]" @click="enabled = true">{{ i18n.ts._imageEffector.after }}</button>
 				</div>
 			</div>
 		</template>
