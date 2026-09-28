@@ -87,7 +87,7 @@ export function getPreferencesProfileMenu(): MenuItem[] {
 
 	if (prefer.s.devMode) {
 		menu.push({
-			text: 'Copy profile as text',
+			text: i18n.ts._preferencesProfile.copyProfileAsText,
 			icon: 'ti ti-clipboard',
 			action: () => {
 				copyToClipboard(JSON.stringify(prefer.profile, null, '\t'));

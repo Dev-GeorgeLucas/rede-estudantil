@@ -90,6 +90,7 @@ importRequested: "インポートをリクエストしました。これには�
 lists: "リスト"
 noLists: "リストはありません"
 note: "ノート"
+post: "投稿"
 notes: "ノート"
 following: "フォロー"
 followers: "フォロワー"
@@ -795,6 +796,7 @@ contact: "連絡先"
 useSystemFont: "システムのデフォルトのフォントを使う"
 clips: "クリップ"
 experimentalFeatures: "実験的機能"
+enableHapticFeedback: "触覚フィードバックを有効にする"
 experimental: "実験的"
 thisIsExperimentalFeature: "これは実験的な機能です。仕様が変更されたり、正常に動作しなかったりする可能性があります。"
 developer: "開発者"
@@ -1587,6 +1589,7 @@ _preferencesProfile:
   profileNameDescription: "このデバイスを識別する名前を設定してください。"
   profileNameDescription2: "例: 「メインPC」、「スマホ」など"
   manageProfiles: "プロファイルの管理"
+  copyProfileAsText: "プロファイルをテキストとしてコピー"
   shareSameProfileBetweenDevicesIsNotRecommended: "複数のデバイスで同一のプロファイルを共有することは推奨しません。"
   useSyncBetweenDevicesOptionIfYouWantToSyncSetting: "複数のデバイスで同期したい設定項目が存在する場合は、個別に「複数のデバイスで同期」オプションを有効にしてください。"
 
@@ -3487,6 +3490,8 @@ _watermarkEditor:
 
 _imageEffector:
   title: "エフェクト"
+  before: "適用前"
+  after: "適用後"
   addEffect: "エフェクトを追加"
   discardChangesConfirm: "変更を破棄して終了しますか？"
   failedToLoadImage: "画像の読み込みに失敗しました"

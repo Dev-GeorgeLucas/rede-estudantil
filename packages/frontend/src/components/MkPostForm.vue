@@ -285,7 +285,7 @@ const submitText = computed((): string => {
 			? i18n.ts.quote
 			: replyTargetNote.value
 				? i18n.ts.reply
-				: i18n.ts.note;
+				: i18n.ts.post;
 });
 
 const submitIcon = computed((): string => {

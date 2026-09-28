@@ -99,7 +99,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 							<template #label>Enable folder page view</template>
 						</MkSwitch>
 						<MkSwitch v-model="enableHapticFeedback">
-							<template #label>Enable haptic feedback</template>
+							<template #label>{{ i18n.ts.enableHapticFeedback }}</template>
 						</MkSwitch>
 						<MkSwitch v-model="enableWebTranslatorApi">
 							<template #label>Enable in-browser translator API</template>
