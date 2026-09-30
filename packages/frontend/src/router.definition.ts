@@ -575,20 +575,21 @@ export const ROUTE_DEF = [{
 	component: page(() => import('@/pages/clicker.vue')),
 	loginRequired: true,
 }, {
+	// MVP: keep legacy game paths typed for internal code, but only show not-found.
 	path: '/games',
-	component: page(() => import('@/pages/games.vue')),
+	component: page(() => import('@/pages/not-found.vue')),
 	loginRequired: false,
 }, {
 	path: '/bubble-game',
-	component: page(() => import('@/pages/drop-and-fusion.vue')),
-	loginRequired: true,
+	component: page(() => import('@/pages/not-found.vue')),
+	loginRequired: false,
 }, {
 	path: '/reversi',
-	component: page(() => import('@/pages/reversi/index.vue')),
+	component: page(() => import('@/pages/not-found.vue')),
 	loginRequired: false,
 }, {
 	path: '/reversi/g/:gameId',
-	component: page(() => import('@/pages/reversi/game.vue')),
+	component: page(() => import('@/pages/not-found.vue')),
 	loginRequired: false,
 }, {
 	path: '/qr',
