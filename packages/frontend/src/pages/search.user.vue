@@ -10,7 +10,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 			<template #prefix><i class="ti ti-search"></i></template>
 		</MkInput>
 		<MkRadios
-			v-if="instance.federation !== 'none'"
+			v-if="iAmModerator && instance.federation !== 'none'"
 			v-model="searchOrigin"
 			:options="[
 				{ value: 'combined', label: i18n.ts.all },
@@ -31,6 +31,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 </template>
 
 <script lang="ts" setup>
+import { iAmModerator } from '@/i.js';
 import { markRaw, ref, shallowRef, toRef } from 'vue';
 import type { Endpoints } from 'misskey-js';
 import MkUserList from '@/components/MkUserList.vue';
@@ -59,7 +60,7 @@ const key = ref(0);
 const paginator = shallowRef<Paginator<'users/search'> | null>(null);
 
 const searchQuery = ref(toRef(props, 'query').value);
-const searchOrigin = ref(toRef(props, 'origin').value);
+const searchOrigin = ref(iAmModerator ? toRef(props, 'origin').value : 'combined');
 
 async function search() {
 	const query = searchQuery.value.toString().trim();

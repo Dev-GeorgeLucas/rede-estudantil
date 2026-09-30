@@ -4,7 +4,6 @@
  */
 
 import { $i } from '@/i.js';
-import { instance } from '@/instance.js';
 
 export const basicTimelineTypes = [
 	'home',
@@ -33,18 +32,7 @@ export function basicTimelineIconClass(timeline: BasicTimelineType): string {
 }
 
 export function isAvailableBasicTimeline(timeline: BasicTimelineType | undefined | null): boolean {
-	switch (timeline) {
-		case 'home':
-			return $i != null;
-		case 'local':
-			return ($i == null && instance.policies.ltlAvailable) || ($i != null && $i.policies.ltlAvailable);
-		case 'social':
-			return $i != null && $i.policies.ltlAvailable;
-		case 'global':
-			return ($i == null && instance.policies.gtlAvailable) || ($i != null && $i.policies.gtlAvailable);
-		default:
-			return false;
-	}
+	return timeline === 'home' && $i != null;
 }
 
 export function availableBasicTimelines(): BasicTimelineType[] {
@@ -53,4 +41,9 @@ export function availableBasicTimelines(): BasicTimelineType[] {
 
 export function hasWithReplies(timeline: BasicTimelineType | undefined | null): boolean {
 	return timeline === 'local' || timeline === 'social';
+}
+
+// MVP: normalize legacy selections before constructing a timeline or opening a stream.
+export function normalizeTimelineSource<T extends string>(source: T): T | 'home' {
+	return source === 'local' || source === 'social' || source === 'global' ? 'home' : source;
 }

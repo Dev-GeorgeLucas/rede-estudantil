@@ -34,7 +34,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 				>
 				</MkRadios>
 
-				<div v-if="instance.federation !== 'none' && searchScope === 'server'" :class="$style.subOptionRoot">
+				<div v-if="iAmModerator && instance.federation !== 'none' && searchScope === 'server'" :class="$style.subOptionRoot">
 					<MkInput
 						v-model="hostInput"
 						:placeholder="i18n.ts._search.serverHostPlaceholder"
@@ -121,7 +121,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 import { computed, markRaw, ref, shallowRef, toRef } from 'vue';
 import { host as localHost } from '@@/js/config.js';
 import type * as Misskey from 'misskey-js';
-import { $i } from '@/i.js';
+import { $i, iAmModerator } from '@/i.js';
 import { i18n } from '@/i18n.js';
 import { instance } from '@/instance.js';
 import * as os from '@/os.js';
@@ -190,12 +190,17 @@ if (fetchedUser != null) {
 const searchScope = ref<'all' | 'local' | 'server' | 'user'>((() => {
 	if (user.value != null) return 'user';
 	if (noteSearchableScope === 'local') return 'local';
-	if (hostInput.value) return 'server';
+	if (iAmModerator && hostInput.value) return 'server';
 	return 'all';
 })());
 
 const searchScopeDef = computed<MkRadiosOption[]>(() => {
 	const options: MkRadiosOption[] = [];
+
+	if (!iAmModerator) return [
+		{ value: noteSearchableScope === 'local' ? 'local' : 'all', label: i18n.ts._search.searchScopeAll },
+		{ value: 'user', label: i18n.ts._search.searchScopeUser },
+	];
 
 	if (instance.federation !== 'none' && noteSearchableScope === 'global') {
 		options.push({ value: 'all', label: i18n.ts._search.searchScopeAll });

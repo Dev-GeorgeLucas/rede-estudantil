@@ -6,7 +6,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 <template>
 <div class="_spacer" style="--MI_SPACER-w: 1200px;">
 	<MkTab
-		v-if="instance.federation !== 'none'"
+		v-if="iAmModerator && instance.federation !== 'none'"
 		v-model="origin"
 		:tabs="[
 			{ key: 'local', label: i18n.ts.local },
@@ -69,6 +69,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 </template>
 
 <script lang="ts" setup>
+import { iAmModerator } from '@/i.js';
 import { watch, ref, useTemplateRef, computed, markRaw } from 'vue';
 import * as Misskey from 'misskey-js';
 import MkUserList from '@/components/MkUserList.vue';
@@ -164,11 +165,14 @@ misskeyApi('hashtags/list', {
 }).then(tags => {
 	tagsLocal.value = tags;
 });
-misskeyApi('hashtags/list', {
-	sort: '+attachedRemoteUsers',
-	attachedToRemoteUserOnly: true,
-	limit: 30,
-}).then(tags => {
-	tagsRemote.value = tags;
-});
+if (iAmModerator) {
+	misskeyApi('hashtags/list', {
+		sort: '+attachedRemoteUsers',
+		attachedToRemoteUserOnly: true,
+		limit: 30,
+	}).then(tags => {
+		tagsRemote.value = tags;
+	});
+}
+
 </script>

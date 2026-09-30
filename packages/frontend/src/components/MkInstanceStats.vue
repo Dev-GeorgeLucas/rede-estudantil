@@ -62,10 +62,9 @@ import type { ChartSrc } from '@/components/MkChart.vue';
 import MkSelect from '@/components/MkSelect.vue';
 import MkChart from '@/components/MkChart.vue';
 import { useChartTooltip } from '@/composables/use-chart-tooltip.js';
-import { $i } from '@/i.js';
+import { iAmModerator } from '@/i.js';
 import * as os from '@/os.js';
 import { misskeyApiGet } from '@/utility/misskey-api.js';
-import { instance } from '@/instance.js';
 import { i18n } from '@/i18n.js';
 import MkHeatmap from '@/components/MkHeatmap.vue';
 import MkFoldableSection from '@/components/MkFoldableSection.vue';
@@ -77,7 +76,7 @@ import { themeManager } from '@/theme.js';
 
 initChart();
 
-const shouldShowFederation = computed(() => instance.federation !== 'none' || $i?.isModerator);
+const shouldShowFederation = computed(() => iAmModerator);
 
 const chartLimit = 500;
 const {

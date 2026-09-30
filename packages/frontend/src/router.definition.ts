@@ -27,7 +27,7 @@ export const ROUTE_DEF = [{
 	component: $i ? PageTimeline : page(() => import('@/pages/welcome.vue')),
 }, {
 	path: '/timeline',
-	component: PageTimeline,
+	component: $i ? PageTimeline : page(() => import('@/pages/explore.vue')),
 }, {
 	path: '/@:username/pages/:pageName(*)',
 	component: page(() => import('@/pages/page.vue')),
@@ -70,7 +70,7 @@ export const ROUTE_DEF = [{
 	loginRequired: true,
 }, {
 	path: '/instance-info/:host',
-	component: page(() => import('@/pages/instance-info.vue')),
+	component: iAmModerator ? page(() => import('@/pages/instance-info.vue')) : page(() => import('@/pages/not-found.vue')),
 }, {
 	name: 'settings',
 	path: '/settings',

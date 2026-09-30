@@ -5,7 +5,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 
 <template>
 <div class="_gaps_m">
-	<MkFolder v-for="x in statusbars" :key="x.id">
+	<MkFolder v-for="x in visibleStatusbars" :key="x.id">
 		<template #label>{{ x.type ?? i18n.ts.notSet }}</template>
 		<template #suffix>{{ x.name }}</template>
 		<XStatusbar :_id="x.id" :userLists="userLists"/>
@@ -15,6 +15,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 </template>
 
 <script lang="ts" setup>
+import { iAmModerator } from '@/i.js';
 import { onMounted, ref, computed } from 'vue';
 import * as Misskey from 'misskey-js';
 import XStatusbar from './statusbar.statusbar.vue';
@@ -27,6 +28,7 @@ import { definePage } from '@/page.js';
 import { prefer } from '@/preferences.js';
 
 const statusbars = prefer.r.statusbars;
+const visibleStatusbars = computed(() => statusbars.value.filter(x => iAmModerator || x.type !== 'federation'));
 
 const userLists = ref<Misskey.entities.UserList[] | null>(null);
 

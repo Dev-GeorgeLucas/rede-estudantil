@@ -4,13 +4,14 @@ SPDX-License-Identifier: AGPL-3.0-only
 -->
 
 <template>
-<div :class="$style.root" :style="themeColorStyle">
+<div v-if="iAmModerator" :class="$style.root" :style="themeColorStyle">
 	<img v-if="faviconUrl" :class="$style.icon" :src="faviconUrl"/>
 	<div :class="$style.name">{{ instanceName }}</div>
 </div>
 </template>
 
 <script lang="ts" setup>
+import { iAmModerator } from '@/i.js';
 import { computed } from 'vue';
 import { instanceName as localInstanceName } from '@@/js/config.js';
 import type { CSSProperties } from 'vue';

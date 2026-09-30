@@ -86,6 +86,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 </template>
 
 <script lang="ts" setup>
+import { iAmModerator } from '@/i.js';
 import { reactive, computed, watch } from 'vue';
 import * as Misskey from 'misskey-js';
 import MkSelect from '@/components/MkSelect.vue';
@@ -112,7 +113,7 @@ const statusbarTypeDef = computed(() => {
 	const items = [
 		{ label: 'RSS', value: 'rss' },
 	] satisfies MkSelectItem[];
-	if (instance.federation !== 'none') {
+	if (iAmModerator && instance.federation !== 'none') {
 		items.push({ label: 'Federation', value: 'federation' });
 	}
 	if (props.userLists != null) {
