@@ -6,7 +6,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 <template>
 <div :class="$style.root">
 	<div
-		v-for="x in prefer.r.statusbars.value" :key="x.id" :class="[$style.item, { [$style.black]: x.black,
+		v-for="x in visibleStatusbars" :key="x.id" :class="[$style.item, { [$style.black]: x.black,
 			[$style.verySmall]: x.size === 'verySmall',
 			[$style.small]: x.size === 'small',
 			[$style.large]: x.size === 'large',
@@ -22,9 +22,11 @@ SPDX-License-Identifier: AGPL-3.0-only
 </template>
 
 <script lang="ts" setup>
-import { defineAsyncComponent } from 'vue';
+import { iAmModerator } from '@/i.js';
+import { computed, defineAsyncComponent } from 'vue';
 import { instance } from '@/instance.js';
 import { prefer } from '@/preferences.js';
+const visibleStatusbars = computed(() => prefer.r.statusbars.value.filter(x => iAmModerator || x.type !== 'federation'));
 const XRss = defineAsyncComponent(() => import('./statusbar-rss.vue'));
 const XFederation = defineAsyncComponent(() => import('./statusbar-federation.vue'));
 const XUserList = defineAsyncComponent(() => import('./statusbar-user-list.vue'));

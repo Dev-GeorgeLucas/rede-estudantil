@@ -27,7 +27,8 @@ export const ROUTE_DEF = [{
 	component: $i ? PageTimeline : page(() => import('@/pages/welcome.vue')),
 }, {
 	path: '/timeline',
-	component: PageTimeline,
+	component: $i ? PageTimeline : page(() => import('@/pages/explore.vue')),
+	loginRequired: true,
 }, {
 	path: '/@:username/pages/:pageName(*)',
 	component: page(() => import('@/pages/page.vue')),
@@ -70,7 +71,7 @@ export const ROUTE_DEF = [{
 	loginRequired: true,
 }, {
 	path: '/instance-info/:host',
-	component: page(() => import('@/pages/instance-info.vue')),
+	component: iAmModerator ? page(() => import('@/pages/instance-info.vue')) : page(() => import('@/pages/not-found.vue')),
 }, {
 	name: 'settings',
 	path: '/settings',
@@ -241,6 +242,7 @@ export const ROUTE_DEF = [{
 }, {
 	path: '/explore',
 	component: page(() => import('@/pages/explore.vue')),
+	loginRequired: true,
 	hash: 'initialTab',
 }, {
 	path: '/search',
@@ -575,20 +577,21 @@ export const ROUTE_DEF = [{
 	component: page(() => import('@/pages/clicker.vue')),
 	loginRequired: true,
 }, {
+	// MVP: keep legacy game paths typed for internal code, but only show not-found.
 	path: '/games',
-	component: page(() => import('@/pages/games.vue')),
+	component: page(() => import('@/pages/not-found.vue')),
 	loginRequired: false,
 }, {
 	path: '/bubble-game',
-	component: page(() => import('@/pages/drop-and-fusion.vue')),
-	loginRequired: true,
+	component: page(() => import('@/pages/not-found.vue')),
+	loginRequired: false,
 }, {
 	path: '/reversi',
-	component: page(() => import('@/pages/reversi/index.vue')),
+	component: page(() => import('@/pages/not-found.vue')),
 	loginRequired: false,
 }, {
 	path: '/reversi/g/:gameId',
-	component: page(() => import('@/pages/reversi/game.vue')),
+	component: page(() => import('@/pages/not-found.vue')),
 	loginRequired: false,
 }, {
 	path: '/qr',

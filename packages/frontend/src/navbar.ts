@@ -7,7 +7,7 @@ import { computed, reactive } from 'vue';
 import { ui } from '@@/js/config.js';
 import { clearCache } from './utility/clear-cache.js';
 import type { ComputedRef } from 'vue';
-import { $i } from '@/i.js';
+import { $i, iAmModerator } from '@/i.js';
 import { miLocalStorage } from '@/local-storage.js';
 import { openInstanceMenu, openToolsMenu } from '@/ui/_common_/common.js';
 import { lookup } from '@/utility/lookup.js';
@@ -70,13 +70,15 @@ export const navbarItemDef = reactive<{
 		icon: 'ti ti-search',
 		to: '/search',
 	},
-	lookup: {
-		title: i18n.ts.lookup,
-		icon: 'ti ti-world-search',
-		action: (ev) => {
-			lookup();
+	...(iAmModerator ? {
+		lookup: {
+			title: i18n.ts.lookup,
+			icon: 'ti ti-world-search',
+			action: (ev) => {
+				lookup();
+			},
 		},
-	},
+	} : {}),
 	qr: {
 		title: i18n.ts.qr,
 		icon: 'ti ti-qrcode',
@@ -139,11 +141,6 @@ export const navbarItemDef = reactive<{
 		icon: 'ti ti-medal',
 		show: computed(() => $i != null),
 		to: '/my/achievements',
-	},
-	games: {
-		title: 'Misskey Games',
-		icon: 'ti ti-device-gamepad',
-		to: '/games',
 	},
 	ui: {
 		title: i18n.ts.switchUi,

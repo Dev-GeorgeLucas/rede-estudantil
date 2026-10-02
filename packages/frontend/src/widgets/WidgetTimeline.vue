@@ -36,7 +36,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 </template>
 
 <script lang="ts" setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import * as Misskey from 'misskey-js';
 import { useWidgetPropsManager } from './widget.js';
 import type { WidgetComponentEmits, WidgetComponentExpose, WidgetComponentProps } from './widget.js';
@@ -47,7 +47,7 @@ import { misskeyApi } from '@/utility/misskey-api.js';
 import MkContainer from '@/components/MkContainer.vue';
 import MkStreamingNotesTimeline from '@/components/MkStreamingNotesTimeline.vue';
 import { i18n } from '@/i18n.js';
-import { availableBasicTimelines, isAvailableBasicTimeline, isBasicTimeline, basicTimelineIconClass, basicTimelineTypes } from '@/timelines.js';
+import { availableBasicTimelines, isAvailableBasicTimeline, isBasicTimeline, basicTimelineIconClass, basicTimelineTypes, normalizeTimelineSource } from '@/timelines.js';
 
 const name = 'timeline';
 
@@ -90,6 +90,14 @@ const { widgetProps, configure, save } = useWidgetPropsManager(name,
 	emit,
 );
 
+watch(() => widgetProps.src, value => {
+	const source = normalizeTimelineSource(value);
+	if (source !== value) {
+		widgetProps.src = source;
+		save();
+	}
+}, { immediate: true, flush: 'sync' });
+
 const menuOpened = ref(false);
 
 const headerTitle = computed<string>(() => {
@@ -98,7 +106,7 @@ const headerTitle = computed<string>(() => {
 	} else if (widgetProps.src === 'antenna') {
 		return widgetProps.antenna != null ? widgetProps.antenna.name : '?';
 	} else {
-		return i18n.ts._timelines[widgetProps.src] ?? '?';
+		return i18n.ts.following;
 	}
 });
 
@@ -133,7 +141,7 @@ const choose = async (ev: PointerEvent) => {
 	const menuItems: MenuItem[] = [];
 
 	menuItems.push(...availableBasicTimelines().map(tl => ({
-		text: i18n.ts._timelines[tl],
+		text: i18n.ts.following,
 		icon: basicTimelineIconClass(tl),
 		action: () => { setSrc(tl); },
 	})));

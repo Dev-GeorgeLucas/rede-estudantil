@@ -41,7 +41,7 @@ import type { SuperMenuDef } from '@/components/MkSuperMenu.vue';
 import { i18n } from '@/i18n.js';
 import MkInfo from '@/components/MkInfo.vue';
 import MkSuperMenu from '@/components/MkSuperMenu.vue';
-import { $i } from '@/i.js';
+import { $i, iAmModerator } from '@/i.js';
 import { clearCache } from '@/utility/clear-cache.js';
 import { instance } from '@/instance.js';
 import { definePage, provideMetadataReceiver, provideReactiveMetadata } from '@/page.js';
@@ -53,7 +53,8 @@ import { signout } from '@/signout.js';
 import { genSearchIndexes } from '@/utility/inapp-search.js';
 import { enableStoragePersistence, getStoragePersistenceStatusRef, storagePersistenceSupported, skipStoragePersistence } from '@/utility/storage.js';
 
-const searchIndex = await import('search-index:settings').then(({ searchIndexes }) => genSearchIndexes(searchIndexes));
+const searchIndex = await import('search-index:settings').then(({ searchIndexes }) => genSearchIndexes(searchIndexes)
+	.filter(item => iAmModerator || !['federation-instance-ticker', 'federation-instance-mute'].includes(item.id)));
 
 const storagePersisted = await getStoragePersistenceStatusRef();
 

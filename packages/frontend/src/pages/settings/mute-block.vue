@@ -62,10 +62,11 @@ SPDX-License-Identifier: AGPL-3.0-only
 			</SearchMarker>
 
 			<SearchMarker
+				markerId="federation-instance-mute"
 				:label="i18n.ts.instanceMute"
 				:keywords="['note', 'server', 'instance', 'host', 'federation', 'mute', 'hide']"
 			>
-				<MkFolder v-if="instance.federation !== 'none'">
+				<MkFolder v-if="iAmModerator && instance.federation !== 'none'">
 					<template #icon><i class="ti ti-planet-off"></i></template>
 					<template #label>{{ i18n.ts.instanceMute }}</template>
 
@@ -184,7 +185,7 @@ import { definePage } from '@/page.js';
 import MkUserCardMini from '@/components/MkUserCardMini.vue';
 import * as os from '@/os.js';
 import { instance } from '@/instance.js';
-import { ensureSignin } from '@/i.js';
+import { ensureSignin, iAmModerator } from '@/i.js';
 import MkInfo from '@/components/MkInfo.vue';
 import MkFolder from '@/components/MkFolder.vue';
 import MkSwitch from '@/components/MkSwitch.vue';

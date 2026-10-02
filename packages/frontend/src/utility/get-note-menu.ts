@@ -8,7 +8,7 @@ import { url } from '@@/js/config.js';
 import { claimAchievement } from './achievements.js';
 import type { Ref, ShallowRef } from 'vue';
 import type { MenuItem } from '@/types/menu.js';
-import { $i } from '@/i.js';
+import { $i, iAmModerator } from '@/i.js';
 import { i18n } from '@/i18n.js';
 import { instance } from '@/instance.js';
 import * as os from '@/os.js';
@@ -379,7 +379,7 @@ export function getNoteMenu(props: {
 			action: copyContent,
 		}, getCopyNoteLinkMenu(appearNote, i18n.ts.copyLink));
 
-		if (link) {
+		if (iAmModerator && link) {
 			menuItems.push({
 				icon: 'ti ti-link',
 				text: i18n.ts.copyRemoteLink,
@@ -393,7 +393,7 @@ export function getNoteMenu(props: {
 					window.open(link, '_blank', 'noopener');
 				},
 			});
-		} else {
+		} else if (!link) {
 			const embedMenu = getNoteEmbedCodeMenu(appearNote, i18n.ts.embed);
 			if (embedMenu != null) {
 				menuItems.push(embedMenu);
@@ -556,7 +556,7 @@ export function getNoteMenu(props: {
 			action: copyContent,
 		}, getCopyNoteLinkMenu(appearNote, i18n.ts.copyLink));
 
-		if (link != null) {
+		if (iAmModerator && link != null) {
 			menuItems.push({
 				icon: 'ti ti-link',
 				text: i18n.ts.copyRemoteLink,
@@ -570,7 +570,7 @@ export function getNoteMenu(props: {
 					window.open(link, '_blank', 'noopener');
 				},
 			});
-		} else {
+		} else if (!link) {
 			const embedMenu = getNoteEmbedCodeMenu(appearNote, i18n.ts.embed);
 			if (embedMenu != null) {
 				menuItems.push(embedMenu);

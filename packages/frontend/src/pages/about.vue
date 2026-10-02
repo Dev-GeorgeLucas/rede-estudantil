@@ -11,7 +11,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 	<div v-else-if="tab === 'emojis'" class="_spacer" style="--MI_SPACER-w: 1000px; --MI_SPACER-min: 20px;">
 		<XEmojis/>
 	</div>
-	<div v-else-if="instance.federation !== 'none' && tab === 'federation'" class="_spacer" style="--MI_SPACER-w: 1000px; --MI_SPACER-min: 20px;">
+	<div v-else-if="iAmModerator && instance.federation !== 'none' && tab === 'federation'" class="_spacer" style="--MI_SPACER-w: 1000px; --MI_SPACER-min: 20px;">
 		<XFederation/>
 	</div>
 	<div v-else-if="tab === 'charts'" class="_spacer" style="--MI_SPACER-w: 1000px; --MI_SPACER-min: 20px;">
@@ -21,6 +21,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 </template>
 
 <script lang="ts" setup>
+import { iAmModerator } from '@/i.js';
 import { computed, defineAsyncComponent, ref, watch } from 'vue';
 import { instance } from '@/instance.js';
 import { i18n } from '@/i18n.js';
@@ -38,9 +39,10 @@ const props = withDefaults(defineProps<{
 	initialTab: 'overview',
 });
 
-const tab = ref(props.initialTab);
+const tab = ref(!iAmModerator && props.initialTab === 'federation' ? 'overview' : props.initialTab);
 
 watch(tab, () => {
+	if (!iAmModerator && tab.value === 'federation') tab.value = 'overview';
 	if (tab.value === 'charts') {
 		claimAchievement('viewInstanceChart');
 	}
@@ -55,7 +57,7 @@ const headerTabs = computed(() => [{
 	key: 'emojis',
 	title: i18n.ts.customEmojis,
 	icon: 'ti ti-icons',
-}, ...(instance.federation !== 'none' ? [{
+}, ...(iAmModerator && instance.federation !== 'none' ? [{
 	key: 'federation',
 	title: i18n.ts.federation,
 	icon: 'ti ti-whirl',

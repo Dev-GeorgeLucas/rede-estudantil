@@ -16,7 +16,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 	<div :class="$style.contents">
 		<MkVisitorDashboard/>
 	</div>
-	<div v-if="instances && instances.length > 0" :class="$style.federation">
+	<div v-if="iAmModerator && instances && instances.length > 0" :class="$style.federation">
 		<MkMarqueeText :duration="40">
 			<MkA v-for="instance in instances" :key="instance.id" :class="$style.federationInstance" :to="`/instance-info/${instance.host}`" behavior="window">
 				<!--<MkInstanceCardMini :instance="instance"/>-->
@@ -29,6 +29,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 </template>
 
 <script lang="ts" setup>
+import { iAmModerator } from '@/i.js';
 import { ref } from 'vue';
 import * as Misskey from 'misskey-js';
 import XTimeline from './welcome.timeline.vue';
@@ -50,13 +51,16 @@ function getInstanceIcon(instance: Misskey.entities.FederationInstance): string 
 	return getProxiedImageUrl(instance.iconUrl, 'preview');
 }
 
-misskeyApiGet('federation/instances', {
-	sort: '+pubSub',
-	limit: 20,
-	blocked: false,
-}).then(_instances => {
-	instances.value = _instances;
-});
+if (iAmModerator) {
+	misskeyApiGet('federation/instances', {
+		sort: '+pubSub',
+		limit: 20,
+		blocked: false,
+	}).then(_instances => {
+		instances.value = _instances;
+	});
+}
+
 </script>
 
 <style lang="scss" module>

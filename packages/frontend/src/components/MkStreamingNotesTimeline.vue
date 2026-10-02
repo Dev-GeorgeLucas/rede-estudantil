@@ -62,6 +62,7 @@ import { useInterval } from '@@/js/use-interval.js';
 import { useDocumentVisibility } from '@@/js/use-document-visibility.js';
 import { getScrollContainer, scrollToTop } from '@@/js/scroll.js';
 import type { BasicTimelineType } from '@/timelines.js';
+import { normalizeTimelineSource } from '@/timelines.js';
 import type { SoundStore } from '@/preferences/def.js';
 import type { IPaginator, MisskeyEntity } from '@/utility/paginator.js';
 import MkPullToRefresh from '@/components/MkPullToRefresh.vue';
@@ -100,20 +101,22 @@ const props = withDefaults(defineProps<{
 	customSound: null,
 });
 
+const timelineSource = normalizeTimelineSource(props.src);
+
 provide('inTimeline', true);
 provide('tl_withSensitive', computed(() => props.withSensitive));
-provide(DI.inChannel, computed(() => props.src === 'channel' ? props.channel ?? null : null));
+provide(DI.inChannel, computed(() => timelineSource === 'channel' ? props.channel ?? null : null));
 
 let paginator: IPaginator<Misskey.entities.Note>;
 
-if (props.src === 'antenna') {
+if (timelineSource === 'antenna') {
 	paginator = markRaw(new Paginator('antennas/notes', {
 		computedParams: computed(() => ({
 			antennaId: props.antenna!,
 		})),
 		useShallowRef: true,
 	}));
-} else if (props.src === 'home') {
+} else if (timelineSource === 'home') {
 	paginator = markRaw(new Paginator('notes/timeline', {
 		computedParams: computed(() => ({
 			withRenotes: props.withRenotes,
@@ -121,7 +124,7 @@ if (props.src === 'antenna') {
 		})),
 		useShallowRef: true,
 	}));
-} else if (props.src === 'local') {
+} else if (timelineSource === 'local') {
 	paginator = markRaw(new Paginator('notes/local-timeline', {
 		computedParams: computed(() => ({
 			withRenotes: props.withRenotes,
@@ -130,7 +133,7 @@ if (props.src === 'antenna') {
 		})),
 		useShallowRef: true,
 	}));
-} else if (props.src === 'social') {
+} else if (timelineSource === 'social') {
 	paginator = markRaw(new Paginator('notes/hybrid-timeline', {
 		computedParams: computed(() => ({
 			withRenotes: props.withRenotes,
@@ -139,7 +142,7 @@ if (props.src === 'antenna') {
 		})),
 		useShallowRef: true,
 	}));
-} else if (props.src === 'global') {
+} else if (timelineSource === 'global') {
 	paginator = markRaw(new Paginator('notes/global-timeline', {
 		computedParams: computed(() => ({
 			withRenotes: props.withRenotes,
@@ -147,18 +150,18 @@ if (props.src === 'antenna') {
 		})),
 		useShallowRef: true,
 	}));
-} else if (props.src === 'mentions') {
+} else if (timelineSource === 'mentions') {
 	paginator = markRaw(new Paginator('notes/mentions', {
 		useShallowRef: true,
 	}));
-} else if (props.src === 'directs') {
+} else if (timelineSource === 'directs') {
 	paginator = markRaw(new Paginator('notes/mentions', {
 		params: {
 			visibility: 'specified',
 		},
 		useShallowRef: true,
 	}));
-} else if (props.src === 'list') {
+} else if (timelineSource === 'list') {
 	paginator = markRaw(new Paginator('notes/user-list-timeline', {
 		computedParams: computed(() => ({
 			withRenotes: props.withRenotes,
@@ -167,14 +170,14 @@ if (props.src === 'antenna') {
 		})),
 		useShallowRef: true,
 	}));
-} else if (props.src === 'channel') {
+} else if (timelineSource === 'channel') {
 	paginator = markRaw(new Paginator('channels/timeline', {
 		computedParams: computed(() => ({
 			channelId: props.channel!,
 		})),
 		useShallowRef: true,
 	}));
-} else if (props.src === 'role') {
+} else if (timelineSource === 'role') {
 	paginator = markRaw(new Paginator('roles/notes', {
 		computedParams: computed(() => ({
 			roleId: props.role!,
@@ -182,7 +185,7 @@ if (props.src === 'antenna') {
 		useShallowRef: true,
 	}));
 } else {
-	throw new Error('Unrecognized timeline type: ' + props.src);
+	throw new Error('Unrecognized timeline type: ' + timelineSource);
 }
 
 onMounted(() => {
@@ -272,7 +275,7 @@ useGlobalEvent('noteDeleted', (noteId) => {
 });
 
 useGlobalEvent('noteRemovedFromAntenna', (antennaId, noteId) => {
-	if (props.src === 'antenna' && props.antenna === antennaId) {
+	if (timelineSource === 'antenna' && props.antenna === antennaId) {
 		paginator.removeItem(noteId);
 	}
 });
@@ -320,50 +323,50 @@ const connections = {
 
 function connectChannel() {
 	if (stream == null) return;
-	if (props.src === 'antenna') {
+	if (timelineSource === 'antenna') {
 		if (props.antenna == null) return;
 		connections.antenna = stream.useChannel('antenna', {
 			antennaId: props.antenna,
 		});
 		connections.antenna.on('note', prepend);
-	} else if (props.src === 'home') {
+	} else if (timelineSource === 'home') {
 		connections.homeTimeline = stream.useChannel('homeTimeline', {
 			withRenotes: props.withRenotes,
 			withFiles: props.onlyFiles ? true : undefined,
 		});
 		connections.main = stream.useChannel('main');
 		connections.homeTimeline.on('note', prepend);
-	} else if (props.src === 'local') {
+	} else if (timelineSource === 'local') {
 		connections.localTimeline = stream.useChannel('localTimeline', {
 			withRenotes: props.withRenotes,
 			withReplies: props.withReplies,
 			withFiles: props.onlyFiles ? true : undefined,
 		});
 		connections.localTimeline.on('note', prepend);
-	} else if (props.src === 'social') {
+	} else if (timelineSource === 'social') {
 		connections.hybridTimeline = stream.useChannel('hybridTimeline', {
 			withRenotes: props.withRenotes,
 			withReplies: props.withReplies,
 			withFiles: props.onlyFiles ? true : undefined,
 		});
 		connections.hybridTimeline.on('note', prepend);
-	} else if (props.src === 'global') {
+	} else if (timelineSource === 'global') {
 		connections.globalTimeline = stream.useChannel('globalTimeline', {
 			withRenotes: props.withRenotes,
 			withFiles: props.onlyFiles ? true : undefined,
 		});
 		connections.globalTimeline.on('note', prepend);
-	} else if (props.src === 'mentions') {
+	} else if (timelineSource === 'mentions') {
 		connections.main = stream.useChannel('main');
 		connections.main.on('mention', prepend);
-	} else if (props.src === 'directs') {
+	} else if (timelineSource === 'directs') {
 		connections.main = stream.useChannel('main');
 		connections.main.on('mention', note => {
 			if (note.visibility === 'specified') {
 				prepend(note);
 			}
 		});
-	} else if (props.src === 'list') {
+	} else if (timelineSource === 'list') {
 		if (props.list == null) return;
 		connections.userList = stream.useChannel('userList', {
 			withRenotes: props.withRenotes,
@@ -371,13 +374,13 @@ function connectChannel() {
 			listId: props.list,
 		});
 		connections.userList.on('note', prepend);
-	} else if (props.src === 'channel') {
+	} else if (timelineSource === 'channel') {
 		if (props.channel == null) return;
 		connections.channel = stream.useChannel('channel', {
 			channelId: props.channel,
 		});
 		connections.channel.on('note', prepend);
-	} else if (props.src === 'role') {
+	} else if (timelineSource === 'role') {
 		if (props.role == null) return;
 		connections.roleTimeline = stream.useChannel('roleTimeline', {
 			roleId: props.role,

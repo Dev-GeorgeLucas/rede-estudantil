@@ -192,7 +192,7 @@ export function getUserMenu(user: Misskey.entities.UserDetailed, router: Router 
 		},
 	});
 
-	if (user.host != null && user.url != null) {
+	if (iAmModerator && user.host != null && user.url != null) {
 		menuItems.push({
 			icon: 'ti ti-external-link',
 			text: i18n.ts.showOnRemote,
@@ -201,7 +201,7 @@ export function getUserMenu(user: Misskey.entities.UserDetailed, router: Router 
 				window.open(user.url, '_blank', 'noopener');
 			},
 		});
-	} else {
+	} else if (user.host == null || user.url == null) {
 		menuItems.push({
 			icon: 'ti ti-code',
 			text: i18n.ts.embed,
@@ -427,7 +427,7 @@ export function getUserMenu(user: Misskey.entities.UserDetailed, router: Router 
 		});
 	}
 
-	if ($i != null && user.host !== null) {
+	if (iAmModerator && user.host !== null) {
 		menuItems.push({ type: 'divider' }, {
 			icon: 'ti ti-refresh',
 			text: i18n.ts.updateRemoteUser,

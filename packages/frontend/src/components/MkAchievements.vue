@@ -67,13 +67,15 @@ const props = withDefaults(defineProps<{
 	withDescription: true,
 });
 
+// MVP: hide game achievements without changing stored progress or internal types.
+const visibleAchievementTypes = ACHIEVEMENT_TYPES.filter(x => x !== 'bubbleGameExplodingHead' && x !== 'bubbleGameDoubleExplodingHead');
 const achievements = ref<Misskey.entities.UsersAchievementsResponse | null>(null);
-const lockedAchievements = computed(() => ACHIEVEMENT_TYPES.filter(x => !(achievements.value ?? []).some(a => a.name === x)));
+const lockedAchievements = computed(() => visibleAchievementTypes.filter(x => !(achievements.value ?? []).some(a => a.name === x)));
 
 function _fetch_() {
 	misskeyApi('users/achievements', { userId: props.user.id }).then(res => {
 		achievements.value = [];
-		for (const t of ACHIEVEMENT_TYPES) {
+		for (const t of visibleAchievementTypes) {
 			const a = res.find(x => x.name === t);
 			if (a) achievements.value.push(a);
 		}

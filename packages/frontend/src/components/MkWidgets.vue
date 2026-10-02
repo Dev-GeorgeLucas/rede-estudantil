@@ -14,11 +14,11 @@ SPDX-License-Identifier: AGPL-3.0-only
 			<MkButton inline @click="emit('exit')">{{ i18n.ts.close }}</MkButton>
 		</header>
 		<MkDraggable
-			:modelValue="props.widgets"
+			:modelValue="_widgets"
 			direction="vertical"
 			withGaps
 			group="MkWidgets"
-			@update:modelValue="v => emit('updateWidgets', v)"
+			@update:modelValue="v => emit('updateWidgets', [...v, ...props.widgets.filter(x => !_widgetDefs.includes(x.name as any))])"
 		>
 			<template #default="{ item }">
 				<div :class="[$style.widget, $style.customizeContainer]" data-testid="customize-container">
@@ -45,6 +45,7 @@ export type DefaultStoredWidget = {
 </script>
 
 <script lang="ts" setup>
+import { iAmModerator } from '@/i.js';
 import { computed } from 'vue';
 import { isLink } from '@@/js/is-link.js';
 import type { Component } from 'vue';
@@ -64,7 +65,7 @@ const props = defineProps<{
 }>();
 
 const _widgetDefs = computed(() => {
-	if (instance.federation === 'none') {
+	if (!iAmModerator || instance.federation === 'none') {
 		return widgetDefs.filter(x => !federationWidgets.includes(x as any));
 	} else {
 		return widgetDefs;

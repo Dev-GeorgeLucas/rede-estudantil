@@ -293,8 +293,8 @@ SPDX-License-Identifier: AGPL-3.0-only
 								</MkPreferenceContainer>
 							</SearchMarker>
 
-							<template v-if="instance.federation !== 'none'">
-								<SearchMarker :keywords="['ticker', 'information', 'label', 'instance', 'server', 'host', 'federation']">
+							<template v-if="iAmModerator && instance.federation !== 'none'">
+								<SearchMarker markerId="federation-instance-ticker" :keywords="['ticker', 'information', 'label', 'instance', 'server', 'host', 'federation']">
 									<MkPreferenceContainer k="instanceTicker">
 										<MkSelect
 											v-model="instanceTicker"
@@ -384,7 +384,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 											</MkSelect>
 										</MkPreferenceContainer>
 
-										<MkPreferenceContainer k="defaultNoteLocalOnly">
+										<MkPreferenceContainer v-if="iAmModerator" k="defaultNoteLocalOnly">
 											<MkSwitch v-model="defaultNoteLocalOnly">{{ i18n.ts._visibility.disableFederation }}</MkSwitch>
 										</MkPreferenceContainer>
 									</div>
@@ -888,7 +888,7 @@ import MkFeatureBanner from '@/components/MkFeatureBanner.vue';
 import { globalEvents } from '@/events.js';
 import { claimAchievement } from '@/utility/achievements.js';
 import { instance } from '@/instance.js';
-import { ensureSignin } from '@/i.js';
+import { ensureSignin, iAmModerator } from '@/i.js';
 import { genId } from '@/utility/id.js';
 import { suggestReload } from '@/utility/reload-suggest.js';
 

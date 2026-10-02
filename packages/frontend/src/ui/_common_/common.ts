@@ -9,7 +9,7 @@ import type { MenuItem } from '@/types/menu.js';
 import * as os from '@/os.js';
 import { instance } from '@/instance.js';
 import { i18n } from '@/i18n.js';
-import { $i } from '@/i.js';
+import { $i, iAmModerator } from '@/i.js';
 
 function toolsMenuItems(): MenuItem[] {
 	const items: MenuItem[] = [{
@@ -68,7 +68,7 @@ export function openInstanceMenu(ev: PointerEvent) {
 		to: '/about#emojis',
 	});
 
-	if (instance.federation !== 'none') {
+	if (iAmModerator && instance.federation !== 'none') {
 		menuItems.push({
 			type: 'link',
 			text: i18n.ts.federation,

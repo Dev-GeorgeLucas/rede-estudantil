@@ -20,7 +20,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 					<b>{{ i18n.ts._initialTutorial._postNote._visibility.doNotSendConfidencialOnDirect1 }}</b> {{ i18n.ts._initialTutorial._postNote._visibility.doNotSendConfidencialOnDirect2 }}
 				</MkInfo>
 			</div>
-			<div><i class="ti ti-rocket-off"></i> <b>{{ i18n.ts._visibility.disableFederation }}</b> … {{ i18n.ts._initialTutorial._postNote._visibility.localOnly }}</div>
+			<div v-if="iAmModerator"><i class="ti ti-rocket-off"></i> <b>{{ i18n.ts._visibility.disableFederation }}</b> … {{ i18n.ts._initialTutorial._postNote._visibility.localOnly }}</div>
 		</div>
 	</MkFormSection>
 	<MkFormSection>
@@ -35,6 +35,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 </template>
 
 <script setup lang="ts">
+import { iAmModerator } from '@/i.js';
 import * as Misskey from 'misskey-js';
 import { reactive } from 'vue';
 import { i18n } from '@/i18n.js';
