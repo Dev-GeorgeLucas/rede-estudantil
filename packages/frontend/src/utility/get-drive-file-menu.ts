@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
+import { canUseAdvancedFeatures } from '@/mvp-visibility.js';
 import * as Misskey from 'misskey-js';
 import { defineAsyncComponent } from 'vue';
 import { selectDriveFolder } from './drive.js';
@@ -151,7 +152,7 @@ export function getDriveFileMenu(file: Misskey.entities.DriveFile, folder?: Miss
 		action: () => deleteFile(file),
 	});
 
-	if (prefer.s.devMode) {
+	if (canUseAdvancedFeatures() && prefer.s.devMode) {
 		menuItems.push({ type: 'divider' }, {
 			icon: 'ti ti-hash',
 			text: i18n.ts.copyFileId,

@@ -10,13 +10,13 @@ SPDX-License-Identifier: AGPL-3.0-only
 			<template #label>{{ i18n.ts.navbar }}</template>
 			<MkContainer :showHeader="false">
 				<MkDraggable
-					v-model="items"
+					v-model="visibleItems"
 					direction="vertical"
 					manualDragStart
 				>
 					<template #default="{ item, dragStart }">
 						<div
-							v-if="item.type === '-' || navbarItemDef[item.type]"
+							v-if="item.type === '-' || isNavbarItemVisible(item.type)"
 							:class="$style.item"
 						>
 							<button class="_button" :class="$style.itemHandle" tabindex="-1" :draggable="true" @dragstart.stop="dragStart"><i class="ti ti-menu"></i></button>
@@ -55,6 +55,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 </template>
 
 <script lang="ts" setup>
+import { mergeVisibleItems } from '@/mvp-visibility.js';
 import { computed, ref } from 'vue';
 import MkRadios from '@/components/MkRadios.vue';
 import MkButton from '@/components/MkButton.vue';
@@ -64,7 +65,7 @@ import MkSwitch from '@/components/MkSwitch.vue';
 import MkPreferenceContainer from '@/components/MkPreferenceContainer.vue';
 import MkDraggable from '@/components/MkDraggable.vue';
 import * as os from '@/os.js';
-import { navbarItemDef } from '@/navbar.js';
+import { navbarItemDef, isNavbarItemVisible } from '@/navbar.js';
 import { store } from '@/store.js';
 import { i18n } from '@/i18n.js';
 import { definePage } from '@/page.js';
@@ -76,13 +77,18 @@ const items = ref(prefer.s.menu.map(x => ({
 	id: genId(),
 	type: x,
 })));
+const isVisible = (item: { type: string }) => item.type === '-' || isNavbarItemVisible(item.type);
+const visibleItems = computed({
+	get: () => items.value.filter(isVisible),
+	set: value => { items.value = mergeVisibleItems(items.value, value, isVisible); },
+});
 const itemTypeValues = computed(() => items.value.map(x => x.type));
 
 const menuDisplay = store.model('menuDisplay');
 const showNavbarSubButtons = prefer.model('showNavbarSubButtons');
 
 async function addItem() {
-	const menu = Object.keys(navbarItemDef).filter(k => !itemTypeValues.value.includes(k));
+	const menu = Object.keys(navbarItemDef).filter(k => !itemTypeValues.value.includes(k) && isNavbarItemVisible(k));
 	const { canceled, result: item } = await os.select({
 		title: i18n.ts.addItem,
 		items: [...menu.map(k => ({
@@ -108,7 +114,7 @@ function save() {
 }
 
 function reset() {
-	items.value = getInitialPrefValue('menu').map(x => ({
+	visibleItems.value = getInitialPrefValue('menu').filter(x => x === '-' || isNavbarItemVisible(x)).map(x => ({
 		id: genId(),
 		type: x,
 	}));

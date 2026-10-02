@@ -69,10 +69,14 @@ SPDX-License-Identifier: AGPL-3.0-only
 		</div>
 	</div>
 </PageWithHeader>
+<MkModalWindow v-if="previewOpen" ref="previewModal" :width="800" :height="600" @close="previewModal?.close()" @esc="previewModal?.close()" @click="previewModal?.close()" @closed="previewOpen = false">
+	<template #header>{{ i18n.ts.preview }}</template>
+	<MkPreview/>
+</MkModalWindow>
 </template>
 
 <script lang="ts" setup>
-import { watch, ref, computed } from 'vue';
+import { watch, ref, computed, useTemplateRef } from 'vue';
 import { toUnicode } from 'punycode.js';
 import tinycolor from 'tinycolor2';
 import JSON5 from 'json5';
@@ -81,6 +85,8 @@ import darkTheme from '@@/themes/_dark.json5';
 import { host } from '@@/js/config.js';
 import type { Theme } from '@@/js/theme.js';
 import { genId } from '@/utility/id.js';
+import MkModalWindow from '@/components/MkModalWindow.vue';
+import MkPreview from '@/components/MkPreview.vue';
 import MkButton from '@/components/MkButton.vue';
 import MkCodeEditor from '@/components/MkCodeEditor.vue';
 import MkTextarea from '@/components/MkTextarea.vue';
@@ -139,8 +145,11 @@ const changed = ref(false);
 
 useLeaveGuard(changed);
 
+const previewOpen = ref(false);
+const previewModal = useTemplateRef('previewModal');
+
 function showPreview() {
-	os.pageWindow('/preview');
+	previewOpen.value = true;
 }
 
 function setBgColor(color: typeof bgColors[number]) {

@@ -41,6 +41,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 </template>
 
 <script lang="ts" setup>
+import { canUseAdvancedFeatures } from '@/mvp-visibility.js';
 import { ref, computed, nextTick } from 'vue';
 import type { Extension } from '@/components/MkExtensionInstaller.vue';
 import type { AiScriptPluginMeta } from '@/plugin.js';
@@ -131,6 +132,14 @@ async function _fetch_() {
 
 	switch (res.type) {
 		case 'plugin':
+			if (!canUseAdvancedFeatures()) {
+				errorKV.value = {
+					title: i18n.ts._externalResourceInstaller._errors._resourceTypeNotSupported.title,
+					description: i18n.ts._externalResourceInstaller._errors._resourceTypeNotSupported.description,
+				};
+				uiPhase.value = 'error';
+				return;
+			}
 			try {
 				const meta = await parsePluginMeta(res.data);
 				data.value = {

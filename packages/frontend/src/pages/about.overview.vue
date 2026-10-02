@@ -112,7 +112,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 		</FormSection>
 	</MkSuspense>
 
-	<FormSection>
+	<FormSection v-if="canUseAdvancedFeatures()">
 		<template #label>Well-known resources</template>
 		<div class="_gaps_s">
 			<FormLink to="/.well-known/host-meta" external>host-meta</FormLink>
@@ -126,6 +126,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 </template>
 
 <script lang="ts" setup>
+import { canUseAdvancedFeatures } from '@/mvp-visibility.js';
 import { host, version } from '@@/js/config.js';
 import { i18n } from '@/i18n.js';
 import { instance } from '@/instance.js';

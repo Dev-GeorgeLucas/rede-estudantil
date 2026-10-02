@@ -89,13 +89,13 @@ SPDX-License-Identifier: AGPL-3.0-only
 					<template #label><SearchLabel>{{ i18n.ts.experimentalFeatures }}</SearchLabel></template>
 
 					<div class="_gaps_m">
-						<MkSwitch v-model="skipNoteRender">
+						<MkSwitch v-if="canUseAdvancedFeatures()" v-model="skipNoteRender">
 							<template #label>Enable note render skipping</template>
 						</MkSwitch>
-						<MkSwitch v-model="stackingRouterView">
+						<MkSwitch v-if="canUseAdvancedFeatures()" v-model="stackingRouterView">
 							<template #label>Enable stacking router view</template>
 						</MkSwitch>
-						<MkSwitch v-model="enableFolderPageView">
+						<MkSwitch v-if="canUseAdvancedFeatures()" v-model="enableFolderPageView">
 							<template #label>Enable folder page view</template>
 						</MkSwitch>
 						<MkSwitch v-model="enableHapticFeedback">
@@ -108,7 +108,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 				</MkFolder>
 			</SearchMarker>
 
-			<SearchMarker :keywords="['developer', 'mode', 'debug']">
+			<SearchMarker v-if="canUseAdvancedFeatures()" markerId="mvp-advanced-developer" :keywords="['developer', 'mode', 'debug']">
 				<MkFolder>
 					<template #icon><SearchIcon><i class="ti ti-code"></i></SearchIcon></template>
 					<template #label><SearchLabel>{{ i18n.ts.developer }}</SearchLabel></template>
@@ -124,7 +124,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 
 		<hr>
 
-		<FormLink to="/registry"><template #icon><i class="ti ti-adjustments"></i></template>{{ i18n.ts.registry }}</FormLink>
+		<FormLink v-if="canUseAdvancedFeatures()" to="/registry"><template #icon><i class="ti ti-adjustments"></i></template>{{ i18n.ts.registry }}</FormLink>
 
 		<hr>
 
@@ -147,6 +147,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 </template>
 
 <script lang="ts" setup>
+import { canUseAdvancedFeatures } from '@/mvp-visibility.js';
 import { computed, watch } from 'vue';
 import XMigration from './migration.vue';
 import MkSwitch from '@/components/MkSwitch.vue';

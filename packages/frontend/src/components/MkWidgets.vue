@@ -18,7 +18,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 			direction="vertical"
 			withGaps
 			group="MkWidgets"
-			@update:modelValue="v => emit('updateWidgets', [...v, ...props.widgets.filter(x => !_widgetDefs.includes(x.name as any))])"
+			@update:modelValue="v => emit('updateWidgets', mergeVisibleItems(props.widgets, v, x => _widgetDefs.includes(x.name as any)))"
 		>
 			<template #default="{ item }">
 				<div :class="[$style.widget, $style.customizeContainer]" data-testid="customize-container">
@@ -45,6 +45,7 @@ export type DefaultStoredWidget = {
 </script>
 
 <script lang="ts" setup>
+import { isMvpWidgetVisible, mergeVisibleItems } from '@/mvp-visibility.js';
 import { iAmModerator } from '@/i.js';
 import { computed } from 'vue';
 import { isLink } from '@@/js/is-link.js';
@@ -66,9 +67,9 @@ const props = defineProps<{
 
 const _widgetDefs = computed(() => {
 	if (!iAmModerator || instance.federation === 'none') {
-		return widgetDefs.filter(x => !federationWidgets.includes(x as any));
+		return widgetDefs.filter(x => !federationWidgets.includes(x as any) && isMvpWidgetVisible(x));
 	} else {
-		return widgetDefs;
+		return widgetDefs.filter(isMvpWidgetVisible);
 	}
 });
 

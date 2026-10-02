@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
+import { canUseAdvancedFeatures } from '@/mvp-visibility.js';
 import * as Misskey from 'misskey-js';
 import { url } from '@@/js/config.js';
 import { claimAchievement } from './achievements.js';
@@ -591,7 +592,7 @@ export function getNoteMenu(props: {
 		})));
 	}
 
-	if (prefer.s.devMode) {
+	if (canUseAdvancedFeatures() && prefer.s.devMode) {
 		menuItems.push({ type: 'divider' }, {
 			icon: 'ti ti-hash',
 			text: i18n.ts.copyNoteId,

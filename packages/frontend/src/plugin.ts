@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
+import { canUseAdvancedFeatures } from '@/mvp-visibility.js';
 import { ref } from 'vue';
 import { compareVersions } from 'compare-versions';
 import { isSafeMode } from '@@/js/config.js';
@@ -103,6 +104,7 @@ export async function parsePluginMeta(code: string): Promise<AiScriptPluginMeta>
 }
 
 export async function authorizePlugin(plugin: Plugin) {
+	if (!canUseAdvancedFeatures()) return;
 	if (plugin.permissions == null || plugin.permissions.length === 0) return;
 	if (Object.hasOwn(store.s.pluginTokens, plugin.installId)) return;
 
@@ -134,6 +136,7 @@ export async function authorizePlugin(plugin: Plugin) {
 }
 
 export async function installPlugin(code: string, meta?: AiScriptPluginMeta) {
+	if (!canUseAdvancedFeatures()) throw new Error('Plugins are unavailable in the MVP');
 	if (!code) return;
 
 	let realMeta: AiScriptPluginMeta;
@@ -236,6 +239,7 @@ function addPluginHandler<K extends keyof HandlerDef>(installId: Plugin['install
 }
 
 export function launchPlugins() {
+	if (!canUseAdvancedFeatures() || isSafeMode) return Promise.resolve([]);
 	return Promise.all(prefer.s.plugins.map(plugin => {
 		if (plugin.active) {
 			return launchPlugin(plugin.installId);
@@ -246,7 +250,7 @@ export function launchPlugins() {
 }
 
 async function launchPlugin(id: Plugin['installId']): Promise<void> {
-	if (isSafeMode) return;
+	if (!canUseAdvancedFeatures() || isSafeMode) return;
 	const plugin = prefer.s.plugins.find(x => x.installId === id);
 	if (!plugin) return;
 
@@ -460,5 +464,6 @@ async function createPluginEnv(opts: { plugin: Plugin; storageKey: string }): Pr
 }
 
 export function getPluginHandlers<K extends keyof HandlerDef>(type: K): HandlerDef[K][] {
+	if (!canUseAdvancedFeatures() || isSafeMode) return [];
 	return pluginHandlers.filter((x): x is PluginHandler<K> => x.type === type).map(x => x.ctx);
 }

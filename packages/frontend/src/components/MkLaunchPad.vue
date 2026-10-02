@@ -29,7 +29,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 <script lang="ts" setup>
 import { useTemplateRef } from 'vue';
 import MkModal from '@/components/MkModal.vue';
-import { navbarItemDef } from '@/navbar.js';
+import { navbarItemDef, isNavbarItemVisible } from '@/navbar.js';
 import { deviceKind } from '@/utility/device-kind.js';
 import { prefer } from '@/preferences.js';
 
@@ -53,7 +53,7 @@ const modal = useTemplateRef('modal');
 
 const menu = prefer.s.menu;
 
-const items = Object.keys(navbarItemDef).filter(k => !menu.includes(k)).map(k => navbarItemDef[k]).filter(def => def.show == null ? true : def.show).map(def => ({
+const items = Object.keys(navbarItemDef).filter(k => !menu.includes(k) && isNavbarItemVisible(k)).map(k => navbarItemDef[k]).map(def => ({
 	type: def.to ? 'link' : 'button',
 	text: def.title,
 	icon: def.icon,
