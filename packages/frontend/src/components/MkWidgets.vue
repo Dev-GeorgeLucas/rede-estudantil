@@ -18,7 +18,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 			direction="vertical"
 			withGaps
 			group="MkWidgets"
-			@update:modelValue="v => emit('updateWidgets', mergeVisibleItems(props.widgets, v, x => _widgetDefs.includes(x.name as any)))"
+			@update:modelValue="v => emit('updateWidgets', mergeVisibleItems(props.widgets, v, isStoredWidgetVisible))"
 		>
 			<template #default="{ item }">
 				<div :class="[$style.widget, $style.customizeContainer]" data-testid="customize-container">
@@ -69,11 +69,12 @@ const _widgetDefs = computed(() => {
 	if (!iAmModerator || instance.federation === 'none') {
 		return widgetDefs.filter(x => !federationWidgets.includes(x as any) && isMvpWidgetVisible(x));
 	} else {
-		return widgetDefs.filter(isMvpWidgetVisible);
+		return widgetDefs.filter(name => isMvpWidgetVisible(name));
 	}
 });
 
-const _widgets = computed(() => props.widgets.filter(x => _widgetDefs.value.includes(x.name as any)));
+const isStoredWidgetVisible = (widget: Widget) => _widgetDefs.value.includes(widget.name as any) && isMvpWidgetVisible(widget.name, widget.data);
+const _widgets = computed(() => props.widgets.filter(isStoredWidgetVisible));
 
 const emit = defineEmits<{
 	(ev: 'updateWidgets', widgets: Widget[]): void;

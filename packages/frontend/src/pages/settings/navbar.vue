@@ -16,7 +16,6 @@ SPDX-License-Identifier: AGPL-3.0-only
 				>
 					<template #default="{ item, dragStart }">
 						<div
-							v-if="item.type === '-' || isNavbarItemVisible(item.type)"
 							:class="$style.item"
 						>
 							<button class="_button" :class="$style.itemHandle" tabindex="-1" :draggable="true" @dragstart.stop="dragStart"><i class="ti ti-menu"></i></button>
@@ -65,7 +64,7 @@ import MkSwitch from '@/components/MkSwitch.vue';
 import MkPreferenceContainer from '@/components/MkPreferenceContainer.vue';
 import MkDraggable from '@/components/MkDraggable.vue';
 import * as os from '@/os.js';
-import { navbarItemDef, isNavbarItemVisible } from '@/navbar.js';
+import { navbarItemDef, isNavbarItemVisible, getVisibleNavbarItems } from '@/navbar.js';
 import { store } from '@/store.js';
 import { i18n } from '@/i18n.js';
 import { definePage } from '@/page.js';
@@ -79,7 +78,7 @@ const items = ref(prefer.s.menu.map(x => ({
 })));
 const isVisible = (item: { type: string }) => item.type === '-' || isNavbarItemVisible(item.type);
 const visibleItems = computed({
-	get: () => items.value.filter(isVisible),
+	get: () => getVisibleNavbarItems(items.value, item => item.type),
 	set: value => { items.value = mergeVisibleItems(items.value, value, isVisible); },
 });
 const itemTypeValues = computed(() => items.value.map(x => x.type));
@@ -89,19 +88,26 @@ const showNavbarSubButtons = prefer.model('showNavbarSubButtons');
 
 async function addItem() {
 	const menu = Object.keys(navbarItemDef).filter(k => !itemTypeValues.value.includes(k) && isNavbarItemVisible(k));
+	const dividerBefore = visibleItems.value.findLast((item, index, visible) => index > 0 && item.type !== '-' && visible[index - 1].type !== '-');
 	const { canceled, result: item } = await os.select({
 		title: i18n.ts.addItem,
 		items: [...menu.map(k => ({
 			value: k, label: navbarItemDef[k].title,
-		})), {
+		})), ...(dividerBefore ? [{
 			value: '-', label: i18n.ts.divider,
-		}],
+		}] : [])],
 	});
 	if (canceled || item == null) return;
-	items.value = [...items.value, {
+	const newItem = {
 		id: genId(),
 		type: item,
-	}];
+	};
+	if (item === '-' && dividerBefore) {
+		// Insert between visible items so the new divider can be edited immediately.
+		items.value.splice(items.value.findIndex(x => x.id === dividerBefore.id), 0, newItem);
+	} else {
+		items.value.push(newItem);
+	}
 }
 
 function removeItem(itemId: string) {

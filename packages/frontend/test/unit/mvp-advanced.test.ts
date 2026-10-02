@@ -84,10 +84,12 @@ function setRole(role: typeof roles[number]) {
 	session.user = role === 'visitor' ? null : { isAdmin: role === 'admin', isModerator: role === 'moderator', policies: { chatAvailability: 'available' } };
 }
 
+const secondaryNames = ['rss', 'rssTicker'];
 const hiddenNames = ['aiscript', 'aiscriptApp', 'button', 'serverMetric', 'jobQueue', 'unixClock', 'clicker'];
 const storedWidgets = [
 	{ id: 'memo', name: 'memo', data: { text: 'Homework' } },
-	...hiddenNames.map(name => ({ id: name, name, data: { script: 'saved script', count: 42 } })),
+	...[...hiddenNames, ...secondaryNames].map(name => ({ id: name, name, data: { script: 'saved script', count: 42 } })),
+	{ id: 'antenna', name: 'timeline', data: { src: 'antenna', antenna: { id: 'saved', name: 'Saved antenna' } } },
 	{ id: 'clock', name: 'clock', data: {} },
 ];
 
@@ -122,6 +124,11 @@ describe('MVP advanced visibility', () => {
 					expect(!!view.container.querySelector(`[data-widget="${name}"]`)).toBe(role === 'admin');
 					if (edit) expect(!!view.container.querySelector(`option[value="${name}"]`)).toBe(role === 'admin');
 				}
+				expect(view.container.querySelector('[data-widget="timeline"]')).toBeNull();
+				for (const name of secondaryNames) {
+					expect(view.container.querySelector(`[data-widget="${name}"]`)).toBeNull();
+					if (edit) expect(view.container.querySelector(`option[value="${name}"]`)).toBeNull();
+				}
 				if (edit) {
 					await fireEvent.click(view.getByText('Reorder'));
 					const updated = (view.emitted().updateWidgets as [typeof storedWidgets][])[0][0];
@@ -149,7 +156,7 @@ describe('MVP advanced visibility', () => {
 			expect('component' in route).toBe(true);
 			if ('component' in route) expect((await loadComponent(route.component)).name === 'NotFound').toBe(role !== 'admin');
 		}
-		const kept = ['/settings/apps', '/settings/connect', '/settings/webhook/edit/:webhookId', '/settings/security', '/settings/theme', '/settings/theme/install', '/settings/theme/manage', '/theme-editor', '/install-extensions', '/chat', '/channels', '/my/notifications', '/my/drive', '/share', '/auth/:token', '/miauth/:session', '/oauth/authorize', '/pages', '/gallery', '/play', '/my/antennas'];
+		const kept = ['/settings/apps', '/settings/connect', '/settings/webhook/edit/:webhookId', '/settings/security', '/settings/theme', '/settings/theme/install', '/settings/theme/manage', '/theme-editor', '/install-extensions', '/chat', '/channels', '/my/notifications', '/my/drive', '/share', '/auth/:token', '/miauth/:session', '/oauth/authorize'];
 		for (const path of kept) {
 			const route = routes.find(r => r.fullPath === path)!;
 			if ('component' in route) expect((await loadComponent(route.component)).name, path).not.toBe('NotFound');

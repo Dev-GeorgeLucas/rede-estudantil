@@ -15,7 +15,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 			</MkA>
 			<template v-for="item in menu">
 				<div v-if="item === '-'" :class="$style.divider"></div>
-				<component :is="navbarItemDef[item].to ? 'MkA' : 'button'" v-else-if="isNavbarItemVisible(item)" v-click-anime v-tooltip="navbarItemDef[item].title" class="_button" :class="$style.item" :activeClass="$style.active" :to="navbarItemDef[item].to" v-on="navbarItemDef[item].action ? { click: navbarItemDef[item].action } : {}">
+				<component :is="navbarItemDef[item].to ? 'MkA' : 'button'" v-else v-click-anime v-tooltip="navbarItemDef[item].title" class="_button" :class="$style.item" :activeClass="$style.active" :to="navbarItemDef[item].to" v-on="navbarItemDef[item].action ? { click: navbarItemDef[item].action } : {}">
 					<i :class="[$style.itemIcon, navbarItemDef[item].icon]" class="ti-fw"></i>
 					<span v-if="navbarItemDef[item].indicated" :class="$style.indicator" class="_blink"><i class="_indicatorCircle"></i></span>
 				</component>
@@ -50,7 +50,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 import { computed, defineAsyncComponent, onMounted, ref } from 'vue';
 import { openInstanceMenu } from './common.js';
 import * as os from '@/os.js';
-import { navbarItemDef, isNavbarItemVisible } from '@/navbar.js';
+import { navbarItemDef, getVisibleNavbarItems } from '@/navbar.js';
 import MkButton from '@/components/MkButton.vue';
 import { instance } from '@/instance.js';
 import { i18n } from '@/i18n.js';
@@ -66,7 +66,7 @@ const props = defineProps<{
 }>();
 
 const settingsWindowed = ref(window.innerWidth > WINDOW_THRESHOLD);
-const menu = ref(prefer.s.menu);
+const menu = computed(() => getVisibleNavbarItems(prefer.r.menu.value, item => item));
 // const menuDisplay = store.model('menuDisplay');
 const otherNavItemIndicated = computed<boolean>(() => {
 	for (const def in navbarItemDef) {

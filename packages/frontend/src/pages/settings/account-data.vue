@@ -134,7 +134,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 				</MkFolder>
 			</SearchMarker>
 
-			<SearchMarker :keywords="['antennas']">
+			<SearchMarker v-if="isMvpFeatureVisible('antennas')" markerId="mvp-secondary-antennas" :keywords="['antennas']">
 				<MkFolder>
 					<template #icon><i class="ti ti-antenna"></i></template>
 					<template #label><SearchLabel>{{ i18n.ts.antennas }}</SearchLabel></template>
@@ -158,6 +158,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 </template>
 
 <script lang="ts" setup>
+import { isMvpFeatureVisible } from '@/mvp-visibility.js';
 import { ref, computed } from 'vue';
 import MkButton from '@/components/MkButton.vue';
 import MkFolder from '@/components/MkFolder.vue';

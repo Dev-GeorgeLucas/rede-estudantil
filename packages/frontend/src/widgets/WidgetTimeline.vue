@@ -36,6 +36,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 </template>
 
 <script lang="ts" setup>
+import { isMvpFeatureVisible } from '@/mvp-visibility.js';
 import { ref, computed, watch } from 'vue';
 import * as Misskey from 'misskey-js';
 import { useWidgetPropsManager } from './widget.js';
@@ -118,7 +119,7 @@ const setSrc = (src: TlSrc) => {
 const choose = async (ev: PointerEvent) => {
 	menuOpened.value = true;
 	const [antennas, lists] = await Promise.all([
-		misskeyApi('antennas/list'),
+		isMvpFeatureVisible('antennas') ? misskeyApi('antennas/list') : Promise.resolve([]),
 		misskeyApi('users/lists/list'),
 	]);
 	const antennaItems = antennas.map(antenna => ({

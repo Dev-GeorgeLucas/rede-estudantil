@@ -33,6 +33,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 </template>
 
 <script lang="ts" setup>
+import { isMvpFeatureVisible } from '@/mvp-visibility.js';
 import { defineAsyncComponent, provide, onMounted, computed, ref } from 'vue';
 import { instanceName } from '@@/js/config.js';
 import { isLink } from '@@/js/is-link.js';
@@ -97,7 +98,7 @@ mainRouter.on('change', () => {
 	drawerMenuShowing.value = false;
 });
 
-if (window.innerWidth > 1024) {
+if (isMvpFeatureVisible('deck') && window.innerWidth > 1024) {
 	const tempUI = miLocalStorage.getItem('ui_temp');
 	if (tempUI) {
 		miLocalStorage.setItem('ui', tempUI);
