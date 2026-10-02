@@ -25,6 +25,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 </template>
 
 <script lang="ts" setup>
+import { isMvpPathVisible } from '@/mvp-visibility.js';
 import { defineAsyncComponent, computed, watch, ref } from 'vue';
 import * as Misskey from 'misskey-js';
 import { acct as getAcct } from '@/filters/user.js';
@@ -137,7 +138,7 @@ const headerTabs = computed(() => user.value ? [{
 	key: 'raw',
 	title: 'Raw',
 	icon: 'ti ti-code',
-}] : []);
+}].filter(item => isMvpPathVisible(`/@${props.acct}/${item.key}`)) : []);
 
 definePage(() => ({
 	title: i18n.ts.user,

@@ -233,16 +233,16 @@ export class Nirax<DEF extends RouteDef[]> extends EventEmitter<RouterEvents> {
 
 	public navHook: ((fullPath: string, flag?: RouterFlag) => boolean) | null = null;
 
-	constructor(routes: DEF, currentFullPath: Nirax<DEF>['currentFullPath'], isLoggedIn: boolean, notFoundPageComponent: Component) {
+	constructor(routes: DEF, currentFullPath: Nirax<DEF>['currentFullPath'], isLoggedIn: boolean, notFoundPageComponent: Component, private isPathAllowed: (path: string) => boolean = () => true) {
 		super();
 
+		this.notFoundPageComponent = notFoundPageComponent;
 		this.routes = routes;
 		this.current = this.resolve(currentFullPath)!;
 		this.currentRef = shallowRef(this.current);
 		this.currentRoute = shallowRef(this.current.route);
 		this.currentFullPath = currentFullPath;
 		this.isLoggedIn = isLoggedIn;
-		this.notFoundPageComponent = notFoundPageComponent;
 	}
 
 	public init(triggerForceReplace = false) {
@@ -280,6 +280,11 @@ export class Nirax<DEF extends RouteDef[]> extends EventEmitter<RouterEvents> {
 			queryString,
 			hash,
 		};
+
+		// Reject before matching or loading a route, including nested paths and redirect targets.
+		if (!this.isPathAllowed(fullPath)) {
+			return { route: { path: fullPath, component: this.notFoundPageComponent }, props: new Map(), _parsedRoute };
+		}
 
 		function check(routes: RouteDef[], _parts: string[]): PathResolvedResult | null {
 			forEachRouteLoop:

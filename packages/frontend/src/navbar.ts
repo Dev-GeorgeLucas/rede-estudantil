@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
+import { isMvpFeatureVisible, isMvpPathVisible } from '@/mvp-visibility.js';
 import { computed, reactive, unref } from 'vue';
 import { ui } from '@@/js/config.js';
 import { clearCache } from './utility/clear-cache.js';
@@ -143,6 +144,7 @@ export const navbarItemDef = reactive<{
 		to: '/my/achievements',
 	},
 	ui: {
+		show: computed(() => isMvpFeatureVisible('deck')),
 		title: i18n.ts.switchUi,
 		icon: 'ti ti-devices',
 		action: (ev) => {
@@ -201,5 +203,14 @@ export const navbarItemDef = reactive<{
 });
 
 export function isNavbarItemVisible(name: string): boolean {
-	return navbarItemDef[name] != null && unref(navbarItemDef[name].show) !== false;
+	const item = navbarItemDef[name];
+	return item != null && unref(item.show) !== false && (item.to == null || isMvpPathVisible(item.to));
+}
+
+// Normalize the visible projection without rewriting saved items or editor identities.
+export function getVisibleNavbarItems<T>(items: readonly T[], getName: (item: T) => string): T[] {
+	const visible = items.filter(item => getName(item) === '-' || isNavbarItemVisible(getName(item)));
+	const normalized = visible.filter((item, index) => getName(item) !== '-' || (index > 0 && getName(visible[index - 1]) !== '-'));
+	if (normalized.length > 0 && getName(normalized[normalized.length - 1]) === '-') normalized.pop();
+	return normalized;
 }

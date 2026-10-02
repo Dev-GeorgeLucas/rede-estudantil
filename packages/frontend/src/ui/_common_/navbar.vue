@@ -22,11 +22,11 @@ SPDX-License-Identifier: AGPL-3.0-only
 			<MkA v-tooltip.noDelay.right="i18n.ts.following" :class="$style.item" :activeClass="$style.active" to="/" exact>
 				<i :class="$style.itemIcon" class="ti ti-home ti-fw" style="view-transition-name: navbar-homeIcon;"></i><span :class="$style.itemText">{{ i18n.ts.following }}</span>
 			</MkA>
-			<template v-for="item in prefer.r.menu.value">
+			<template v-for="item in menu">
 				<div v-if="item === '-'" :class="$style.divider"></div>
 				<component
 					:is="navbarItemDef[item].to ? 'MkA' : 'button'"
-					v-else-if="isNavbarItemVisible(item)"
+					v-else
 					v-tooltip.noDelay.right="navbarItemDef[item].title"
 					class="_button"
 					:class="[$style.item]"
@@ -107,7 +107,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 import { computed, defineAsyncComponent, ref, watch } from 'vue';
 import { openInstanceMenu } from './common.js';
 import * as os from '@/os.js';
-import { navbarItemDef, isNavbarItemVisible } from '@/navbar.js';
+import { navbarItemDef, getVisibleNavbarItems } from '@/navbar.js';
 import { store } from '@/store.js';
 import { i18n } from '@/i18n.js';
 import { instance } from '@/instance.js';
@@ -129,6 +129,7 @@ const emit = defineEmits<{
 }>();
 
 const forceIconOnly = ref(!props.asDrawer && window.innerWidth <= 1279);
+const menu = computed(() => getVisibleNavbarItems(prefer.r.menu.value, item => item));
 const iconOnly = computed(() => {
 	return !props.asDrawer && (forceIconOnly.value || (store.r.menuDisplay.value === 'sideIcon'));
 });

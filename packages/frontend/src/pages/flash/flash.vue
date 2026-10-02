@@ -61,6 +61,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 </template>
 
 <script lang="ts" setup>
+import { isMvpFeatureVisible } from '@/mvp-visibility.js';
 import { computed, onDeactivated, onUnmounted, ref, watch, shallowRef, defineAsyncComponent } from 'vue';
 import * as Misskey from 'misskey-js';
 import { utils } from '@syuilo/aiscript';
@@ -206,6 +207,7 @@ function getIsLegacy(version: string | null): boolean {
 }
 
 async function run() {
+	if (!isMvpFeatureVisible('play')) return;
 	if (aiscript.value) aiscript.value.abort();
 	if (!flash.value) return;
 

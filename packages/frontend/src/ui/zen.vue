@@ -22,6 +22,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 </template>
 
 <script lang="ts" setup>
+import { isMvpFeatureVisible } from '@/mvp-visibility.js';
 import { computed, provide, ref } from 'vue';
 import { instanceName, ui } from '@@/js/config.js';
 import XCommon from './_common_/common.vue';
@@ -35,7 +36,7 @@ const isRoot = computed(() => mainRouter.currentRoute.value.name === 'index');
 
 const pageMetadata = ref<null | PageMetadata>(null);
 
-const showDeckNav = !(new URLSearchParams(window.location.search)).has('zen') && ui === 'deck';
+const showDeckNav = isMvpFeatureVisible('deck') && !(new URLSearchParams(window.location.search)).has('zen') && ui === 'deck';
 
 provide(DI.router, mainRouter);
 provideMetadataReceiver((metadataGetter) => {

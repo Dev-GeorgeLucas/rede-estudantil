@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
-import { canUseAdvancedFeatures } from '@/mvp-visibility.js';
+import { canUseAdvancedFeatures, isMvpFeatureVisible } from '@/mvp-visibility.js';
 import { toUnicode } from 'punycode.js';
 import { defineAsyncComponent, ref, watch } from 'vue';
 import * as Misskey from 'misskey-js';
@@ -185,13 +185,15 @@ export function getUserMenu(user: Misskey.entities.UserDetailed, router: Router 
 		},
 	});
 
-	menuItems.push({
-		icon: 'ti ti-rss',
-		text: i18n.ts.copyRSS,
-		action: () => {
-			copyToClipboard(`${user.host ?? host}/@${user.username}.atom`);
-		},
-	});
+	if (isMvpFeatureVisible('rss')) {
+		menuItems.push({
+			icon: 'ti ti-rss',
+			text: i18n.ts.copyRSS,
+			action: () => {
+				copyToClipboard(`${user.host ?? host}/@${user.username}.atom`);
+			},
+		});
+	}
 
 	if (iAmModerator && user.host != null && user.url != null) {
 		menuItems.push({
@@ -284,8 +286,8 @@ export function getUserMenu(user: Misskey.entities.UserDetailed, router: Router 
 					};
 				});
 			},
-		}, {
-			type: 'parent',
+		}, ...(isMvpFeatureVisible('antennas') ? [{
+			type: 'parent' as const,
 			icon: 'ti ti-antenna',
 			text: i18n.ts.addToAntenna,
 			children: async () => {
@@ -310,7 +312,7 @@ export function getUserMenu(user: Misskey.entities.UserDetailed, router: Router 
 					},
 				}));
 			},
-		});
+		}] : []));
 	}
 
 	if ($i && meId !== user.id) {
