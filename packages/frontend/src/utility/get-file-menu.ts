@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
+import { canUseAdvancedFeatures } from '@/mvp-visibility.js';
 import * as Misskey from 'misskey-js';
 import { $i, iAmModerator } from '@/i.js';
 import { i18n } from '@/i18n.js';
@@ -69,7 +70,7 @@ export function getFileMenu(file: Misskey.entities.DriveFile, onHideStateUpdated
 		menuItems.push({ type: 'divider' }, ...details);
 	}
 
-	if (prefer.s.devMode) {
+	if (canUseAdvancedFeatures() && prefer.s.devMode) {
 		menuItems.push({ type: 'divider' }, {
 			icon: 'ti ti-hash',
 			text: i18n.ts.copyFileId,

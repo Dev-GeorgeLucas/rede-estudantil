@@ -15,9 +15,9 @@ SPDX-License-Identifier: AGPL-3.0-only
 				<template #label><i class="ti ti-api"></i> <SearchLabel>{{ i18n.ts._settings.api }}</SearchLabel></template>
 
 				<div class="_gaps_m">
-					<MkButton primary @click="generateToken">{{ i18n.ts.generateAccessToken }}</MkButton>
+					<MkButton v-if="canUseAdvancedFeatures()" primary @click="generateToken">{{ i18n.ts.generateAccessToken }}</MkButton>
 					<FormLink to="/settings/apps">{{ i18n.ts.manageAccessTokens }}</FormLink>
-					<FormLink to="/api-console" :behavior="isDesktop ? 'window' : null">API console</FormLink>
+					<FormLink v-if="canUseAdvancedFeatures()" to="/api-console" :behavior="isDesktop ? 'window' : null">API console</FormLink>
 				</div>
 			</FormSection>
 		</SearchMarker>
@@ -27,7 +27,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 				<template #label><i class="ti ti-webhook"></i> <SearchLabel>{{ i18n.ts._settings.webhook }}</SearchLabel></template>
 
 				<div class="_gaps_m">
-					<FormLink :to="`/settings/webhook/new`">
+					<FormLink v-if="canUseAdvancedFeatures()" :to="`/settings/webhook/new`">
 						{{ i18n.ts._webhookSettings.createWebhook }}
 					</FormLink>
 
@@ -61,6 +61,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 </template>
 
 <script lang="ts" setup>
+import { canUseAdvancedFeatures } from '@/mvp-visibility.js';
 import { computed, ref, defineAsyncComponent, markRaw } from 'vue';
 import MkPagination from '@/components/MkPagination.vue';
 import FormSection from '@/components/form/section.vue';
@@ -82,6 +83,7 @@ const paginator = markRaw(new Paginator('i/webhooks/list', {
 }));
 
 async function generateToken() {
+	if (!canUseAdvancedFeatures()) return;
 	const { dispose } = await os.popupAsyncWithDialog(import('@/components/MkTokenGenerateWindow.vue').then(x => x.default), {}, {
 		done: async result => {
 			const { name, permissions } = result;

@@ -24,6 +24,10 @@ SPDX-License-Identifier: AGPL-3.0-only
 
 		<X2fa/>
 
+		<SearchMarker :keywords="['app', 'token', 'accessToken', 'revoke']">
+			<FormLink to="/settings/apps"><SearchLabel>{{ i18n.ts.manageAccessTokens }}</SearchLabel></FormLink>
+		</SearchMarker>
+
 		<SearchMarker :keywords="['signin', 'login', 'history', 'log']">
 			<FormSection>
 				<template #label><SearchLabel>{{ i18n.ts.signinHistory }}</SearchLabel></template>
@@ -60,6 +64,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 import { computed, markRaw } from 'vue';
 import X2fa from './2fa.vue';
 import FormSection from '@/components/form/section.vue';
+import FormLink from '@/components/form/link.vue';
 import FormSlot from '@/components/form/slot.vue';
 import MkButton from '@/components/MkButton.vue';
 import MkPagination from '@/components/MkPagination.vue';

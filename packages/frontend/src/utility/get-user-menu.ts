@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
+import { canUseAdvancedFeatures } from '@/mvp-visibility.js';
 import { toUnicode } from 'punycode.js';
 import { defineAsyncComponent, ref, watch } from 'vue';
 import * as Misskey from 'misskey-js';
@@ -435,7 +436,7 @@ export function getUserMenu(user: Misskey.entities.UserDetailed, router: Router 
 		});
 	}
 
-	if (prefer.s.devMode) {
+	if (canUseAdvancedFeatures() && prefer.s.devMode) {
 		menuItems.push({ type: 'divider' }, {
 			icon: 'ti ti-hash',
 			text: i18n.ts.copyUserId,

@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
+import { canUseAdvancedFeatures } from '@/mvp-visibility.js';
 import { defineAsyncComponent } from 'vue';
 import type { AsyncComponentLoader } from 'vue';
 import type { RouteDef } from '@/lib/nirax.js';
@@ -19,6 +20,10 @@ export const page = (loader: AsyncComponentLoader) => defineAsyncComponent({
 
 function chatPage(...args: Parameters<typeof page>) {
 	return $i?.policies.chatAvailability !== 'unavailable' ? page(...args) : page(() => import('@/pages/not-found.vue'));
+}
+
+function advancedPage(loader: AsyncComponentLoader) {
+	return page(() => canUseAdvancedFeatures() ? loader() : import('@/pages/not-found.vue'));
 }
 
 export const ROUTE_DEF = [{
@@ -144,11 +149,11 @@ export const ROUTE_DEF = [{
 	}, {
 		path: '/plugin/install',
 		name: 'plugin',
-		component: page(() => import('@/pages/settings/plugin.install.vue')),
+		component: advancedPage(() => import('@/pages/settings/plugin.install.vue')),
 	}, {
 		path: '/plugin',
 		name: 'plugin',
-		component: page(() => import('@/pages/settings/plugin.vue')),
+		component: advancedPage(() => import('@/pages/settings/plugin.vue')),
 	}, {
 		path: '/account-data',
 		name: 'account-data',
@@ -172,7 +177,7 @@ export const ROUTE_DEF = [{
 	}, {
 		path: '/webhook/new',
 		name: 'connect',
-		component: page(() => import('@/pages/settings/webhook.new.vue')),
+		component: advancedPage(() => import('@/pages/settings/webhook.new.vue')),
 	}, {
 		path: '/deck',
 		name: 'deck',
@@ -180,7 +185,7 @@ export const ROUTE_DEF = [{
 	}, {
 		path: '/custom-css',
 		name: 'preferences',
-		component: page(() => import('@/pages/settings/custom-css.vue')),
+		component: advancedPage(() => import('@/pages/settings/custom-css.vue')),
 	}, {
 		path: '/profiles',
 		name: 'profiles',
@@ -276,14 +281,14 @@ export const ROUTE_DEF = [{
 	loginRequired: true,
 }, {
 	path: '/api-console',
-	component: page(() => import('@/pages/api-console.vue')),
-	loginRequired: true,
+	component: advancedPage(() => import('@/pages/api-console.vue')),
+	loginRequired: false,
 }, {
 	path: '/scratchpad',
-	component: page(() => import('@/pages/scratchpad.vue')),
+	component: advancedPage(() => import('@/pages/scratchpad.vue')),
 }, {
 	path: '/preview',
-	component: page(() => import('@/pages/preview.vue')),
+	component: advancedPage(() => import('@/pages/preview.vue')),
 }, {
 	path: '/auth/:token',
 	component: page(() => import('@/pages/auth.vue')),
@@ -364,13 +369,13 @@ export const ROUTE_DEF = [{
 	component: page(() => import('@/pages/avatar-decorations.vue')),
 }, {
 	path: '/registry/keys/:domain/:path(*)?',
-	component: page(() => import('@/pages/registry.keys.vue')),
+	component: advancedPage(() => import('@/pages/registry.keys.vue')),
 }, {
 	path: '/registry/value/:domain/:path(*)?',
-	component: page(() => import('@/pages/registry.value.vue')),
+	component: advancedPage(() => import('@/pages/registry.value.vue')),
 }, {
 	path: '/registry',
-	component: page(() => import('@/pages/registry.vue')),
+	component: advancedPage(() => import('@/pages/registry.vue')),
 }, {
 	path: '/install-extentions',
 	redirect: '/install-extensions',
@@ -574,8 +579,8 @@ export const ROUTE_DEF = [{
 	loginRequired: true,
 }, {
 	path: '/clicker',
-	component: page(() => import('@/pages/clicker.vue')),
-	loginRequired: true,
+	component: advancedPage(() => import('@/pages/clicker.vue')),
+	loginRequired: false,
 }, {
 	// MVP: keep legacy game paths typed for internal code, but only show not-found.
 	path: '/games',
@@ -599,7 +604,7 @@ export const ROUTE_DEF = [{
 	loginRequired: true,
 }, {
 	path: '/debug',
-	component: page(() => import('@/pages/debug.vue')),
+	component: advancedPage(() => import('@/pages/debug.vue')),
 	loginRequired: false,
 }, {
 	// テスト用リダイレクト設定。ログイン中ユーザのプロフィールにリダイレクトする

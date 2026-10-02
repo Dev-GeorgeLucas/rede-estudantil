@@ -35,6 +35,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 </template>
 
 <script setup lang="ts">
+import { isMvpPathVisible, filterMvpSearchIndex } from '@/mvp-visibility.js';
 import { computed, onActivated, onMounted, onUnmounted, ref, useTemplateRef, watch } from 'vue';
 import type { PageMetadata } from '@/page.js';
 import type { SuperMenuDef } from '@/components/MkSuperMenu.vue';
@@ -53,7 +54,7 @@ import { signout } from '@/signout.js';
 import { genSearchIndexes } from '@/utility/inapp-search.js';
 import { enableStoragePersistence, getStoragePersistenceStatusRef, storagePersistenceSupported, skipStoragePersistence } from '@/utility/storage.js';
 
-const searchIndex = await import('search-index:settings').then(({ searchIndexes }) => genSearchIndexes(searchIndexes)
+const searchIndex = await import('search-index:settings').then(({ searchIndexes }) => filterMvpSearchIndex(genSearchIndexes(searchIndexes))
 	.filter(item => iAmModerator || !['federation-instance-ticker', 'federation-instance-mute'].includes(item.id)));
 
 const storagePersisted = await getStoragePersistenceStatusRef();
@@ -83,7 +84,7 @@ function skipAutoBackup() {
 	store.set('showPreferencesAutoCloudBackupSuggestion', false);
 }
 
-const menuDef = computed<SuperMenuDef[]>(() => [{
+const menuDef = computed(() => ([{
 	items: [{
 		icon: 'ti ti-user',
 		text: i18n.ts.profile,
@@ -194,7 +195,7 @@ const menuDef = computed<SuperMenuDef[]>(() => [{
 		},
 		danger: true,
 	}],
-}]);
+}] satisfies SuperMenuDef[]).map(group => ({ ...group, items: group.items.filter(item => !('to' in item) || isMvpPathVisible(item.to)) })));
 
 onMounted(() => {
 	if (el.value == null) return; // TSを黙らすため

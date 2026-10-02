@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
+import { canUseAdvancedFeatures } from '@/mvp-visibility.js';
 import { ref, watch } from 'vue';
 import type { PreferencesProfile } from './manager.js';
 import type { MenuItem } from '@/types/menu.js';
@@ -85,7 +86,7 @@ export function getPreferencesProfileMenu(): MenuItem[] {
 		to: '/settings/profiles',
 	}];
 
-	if (prefer.s.devMode) {
+	if (canUseAdvancedFeatures() && prefer.s.devMode) {
 		menu.push({
 			text: i18n.ts._preferencesProfile.copyProfileAsText,
 			icon: 'ti ti-clipboard',

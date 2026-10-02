@@ -3,13 +3,13 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
-import { computed, reactive } from 'vue';
+import { computed, reactive, unref } from 'vue';
 import { ui } from '@@/js/config.js';
 import { clearCache } from './utility/clear-cache.js';
 import type { ComputedRef } from 'vue';
 import { $i, iAmModerator } from '@/i.js';
 import { miLocalStorage } from '@/local-storage.js';
-import { openInstanceMenu, openToolsMenu } from '@/ui/_common_/common.js';
+import { openInstanceMenu, openToolsMenu, toolsMenuItems } from '@/ui/_common_/common.js';
 import { lookup } from '@/utility/lookup.js';
 import * as os from '@/os.js';
 import { i18n } from '@/i18n.js';
@@ -171,6 +171,7 @@ export const navbarItemDef = reactive<{
 		},
 	},
 	tools: {
+		show: computed(() => toolsMenuItems().length > 0),
 		title: i18n.ts.tools,
 		icon: 'ti ti-tool',
 		action: (ev) => {
@@ -198,3 +199,7 @@ export const navbarItemDef = reactive<{
 		},
 	},
 });
+
+export function isNavbarItemVisible(name: string): boolean {
+	return navbarItemDef[name] != null && unref(navbarItemDef[name].show) !== false;
+}

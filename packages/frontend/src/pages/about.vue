@@ -14,13 +14,14 @@ SPDX-License-Identifier: AGPL-3.0-only
 	<div v-else-if="iAmModerator && instance.federation !== 'none' && tab === 'federation'" class="_spacer" style="--MI_SPACER-w: 1000px; --MI_SPACER-min: 20px;">
 		<XFederation/>
 	</div>
-	<div v-else-if="tab === 'charts'" class="_spacer" style="--MI_SPACER-w: 1000px; --MI_SPACER-min: 20px;">
+	<div v-else-if="canUseAdvancedFeatures() && tab === 'charts'" class="_spacer" style="--MI_SPACER-w: 1000px; --MI_SPACER-min: 20px;">
 		<MkInstanceStats/>
 	</div>
 </PageWithHeader>
 </template>
 
 <script lang="ts" setup>
+import { canUseAdvancedFeatures } from '@/mvp-visibility.js';
 import { iAmModerator } from '@/i.js';
 import { computed, defineAsyncComponent, ref, watch } from 'vue';
 import { instance } from '@/instance.js';
@@ -39,10 +40,17 @@ const props = withDefaults(defineProps<{
 	initialTab: 'overview',
 });
 
-const tab = ref(!iAmModerator && props.initialTab === 'federation' ? 'overview' : props.initialTab);
+function visibleTab(value: string): string {
+	if (value === 'charts' && !canUseAdvancedFeatures()) return 'overview';
+	if (value === 'federation' && (!iAmModerator || instance.federation === 'none')) return 'overview';
+	return value;
+}
+
+const tab = ref(visibleTab(props.initialTab));
+watch(() => props.initialTab, value => { tab.value = visibleTab(value); });
 
 watch(tab, () => {
-	if (!iAmModerator && tab.value === 'federation') tab.value = 'overview';
+	tab.value = visibleTab(tab.value);
 	if (tab.value === 'charts') {
 		claimAchievement('viewInstanceChart');
 	}
@@ -61,11 +69,11 @@ const headerTabs = computed(() => [{
 	key: 'federation',
 	title: i18n.ts.federation,
 	icon: 'ti ti-whirl',
-}] : []), {
+}] : []), ...(canUseAdvancedFeatures() ? [{
 	key: 'charts',
 	title: i18n.ts.charts,
 	icon: 'ti ti-chart-line',
-}]);
+}] : [])]);
 
 definePage(() => ({
 	title: i18n.ts.instanceInfo,

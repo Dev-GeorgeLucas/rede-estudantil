@@ -32,6 +32,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 </template>
 
 <script lang="ts" setup>
+import { canUseAdvancedFeatures } from '@/mvp-visibility.js';
 import { computed, defineAsyncComponent, ref } from 'vue';
 import * as Misskey from 'misskey-js';
 import type { MenuItem } from '@/types/menu.js';
@@ -303,7 +304,7 @@ function onContextmenu(ev: PointerEvent) {
 		danger: true,
 		action: deleteFolder,
 	}];
-	if (prefer.s.devMode) {
+	if (canUseAdvancedFeatures() && prefer.s.devMode) {
 		menu = menu.concat([{ type: 'divider' }, {
 			icon: 'ti ti-hash',
 			text: i18n.ts.copyFolderId,

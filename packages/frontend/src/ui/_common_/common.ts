@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
+import { isMvpPathVisible } from '@/mvp-visibility.js';
 import { defineAsyncComponent } from 'vue';
 import { host } from '@@/js/config.js';
 import type { MenuItem } from '@/types/menu.js';
@@ -11,7 +12,7 @@ import { instance } from '@/instance.js';
 import { i18n } from '@/i18n.js';
 import { $i, iAmModerator } from '@/i.js';
 
-function toolsMenuItems(): MenuItem[] {
+export function toolsMenuItems(): MenuItem[] {
 	const items: MenuItem[] = [{
 		type: 'link',
 		to: '/scratchpad',
@@ -47,7 +48,7 @@ function toolsMenuItems(): MenuItem[] {
 		});
 	}
 
-	return items;
+	return items.filter(item => !(item && typeof item === 'object' && 'to' in item) || isMvpPathVisible(item.to));
 }
 
 export function openInstanceMenu(ev: PointerEvent) {
@@ -170,7 +171,11 @@ export function openInstanceMenu(ev: PointerEvent) {
 		to: '/about-misskey',
 	});
 
-	os.popupMenu(menuItems, ev.currentTarget ?? ev.target, {
+	os.popupMenu(menuItems.filter(item => {
+		if (!item || typeof item !== 'object') return true;
+		if ('to' in item && !isMvpPathVisible(item.to)) return false;
+		return !('type' in item) || item.type !== 'parent' || !Array.isArray(item.children) || item.children.length > 0;
+	}), ev.currentTarget ?? ev.target, {
 		align: 'left',
 	});
 }
