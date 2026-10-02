@@ -28,6 +28,7 @@ export const ROUTE_DEF = [{
 }, {
 	path: '/timeline',
 	component: $i ? PageTimeline : page(() => import('@/pages/explore.vue')),
+	loginRequired: true,
 }, {
 	path: '/@:username/pages/:pageName(*)',
 	component: page(() => import('@/pages/page.vue')),
@@ -241,6 +242,7 @@ export const ROUTE_DEF = [{
 }, {
 	path: '/explore',
 	component: page(() => import('@/pages/explore.vue')),
+	loginRequired: true,
 	hash: 'initialTab',
 }, {
 	path: '/search',
