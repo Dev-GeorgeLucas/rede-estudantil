@@ -9,7 +9,7 @@ import { defineAsyncComponent, ref, watch } from 'vue';
 import * as Misskey from 'misskey-js';
 import { host, url } from '@@/js/config.js';
 import type { Router } from '@/router.js';
-import type { MenuItem } from '@/types/menu.js';
+import type { MenuItem, MenuLink } from '@/types/menu.js';
 import { i18n } from '@/i18n.js';
 import { copyToClipboard } from '@/utility/copy-to-clipboard.js';
 import * as os from '@/os.js';
@@ -22,8 +22,20 @@ import { genEmbedCode } from '@/utility/get-embed-code.js';
 import { prefer } from '@/preferences.js';
 import { getPluginHandlers } from '@/plugin.js';
 
+// Shared by the profile header and the legacy menu. Sending still uses the Chat permission checks.
+export function getUserChatLink(user: Misskey.entities.UserDetailed): MenuLink | null {
+	if (!$i || $i.id === user.id || $i.policies.chatAvailability !== 'available' || !user.canChat || user.host != null || user.isBlocking || user.isBlocked) return null;
+	return {
+		type: 'link',
+		icon: 'ti ti-messages',
+		text: i18n.ts._chat.chatWithThisUser,
+		to: `/chat/user/${user.id}`,
+	};
+}
+
 export function getUserMenu(user: Misskey.entities.UserDetailed, router: Router = mainRouter) {
 	const meId = $i ? $i.id : null;
+	const showExtraActions = isMvpFeatureVisible('profileExtraActions');
 
 	const cleanups = [] as (() => void)[];
 
@@ -204,7 +216,7 @@ export function getUserMenu(user: Misskey.entities.UserDetailed, router: Router 
 				window.open(user.url, '_blank', 'noopener');
 			},
 		});
-	} else if (user.host == null || user.url == null) {
+	} else if (showExtraActions && (user.host == null || user.url == null)) {
 		menuItems.push({
 			icon: 'ti ti-code',
 			text: i18n.ts.embed,
@@ -316,7 +328,7 @@ export function getUserMenu(user: Misskey.entities.UserDetailed, router: Router 
 	}
 
 	if ($i && meId !== user.id) {
-		if (iAmModerator) {
+		if (showExtraActions && iAmModerator) {
 			menuItems.push({
 				type: 'parent',
 				icon: 'ti ti-badges',
@@ -358,58 +370,52 @@ export function getUserMenu(user: Misskey.entities.UserDetailed, router: Router 
 			});
 		}
 
-		// フォローしたとしても user.isFollowing はリアルタイム更新されないので不便なため
-		//if (user.isFollowing) {
-		const withRepliesRef = ref(user.withReplies ?? false);
+		if (showExtraActions) {
+			const withRepliesRef = ref(user.withReplies ?? false);
+			menuItems.push({
+				type: 'switch',
+				icon: 'ti ti-messages',
+				text: i18n.ts.showRepliesToOthersInTimeline,
+				ref: withRepliesRef,
+			});
+			cleanups.push(watch(withRepliesRef, (withReplies) => {
+				misskeyApi('following/update', {
+					userId: user.id,
+					withReplies,
+				}).then(() => {
+					user.withReplies = withReplies;
+				});
+			}));
+		}
 
 		menuItems.push({
-			type: 'switch',
-			icon: 'ti ti-messages',
-			text: i18n.ts.showRepliesToOthersInTimeline,
-			ref: withRepliesRef,
-		}, {
 			icon: user.notify === 'none' ? 'ti ti-bell' : 'ti ti-bell-off',
 			text: user.notify === 'none' ? i18n.ts.notifyNotes : i18n.ts.unnotifyNotes,
 			action: toggleNotify,
 		});
 
-		watch(withRepliesRef, (withReplies) => {
-			misskeyApi('following/update', {
-				userId: user.id,
-				withReplies,
-			}).then(() => {
-				user.withReplies = withReplies;
+		if (showExtraActions) {
+			menuItems.push({ type: 'divider' }, {
+				icon: 'ti ti-pencil-heart',
+				text: i18n.ts.createUserSpecifiedNote,
+				action: () => {
+					const canonical = user.host === null ? `@${user.username}` : `@${user.username}@${user.host}`;
+					os.post({ specified: user, initialText: `${canonical} ` });
+				},
 			});
-		});
-		//}
-
-		menuItems.push({ type: 'divider' }, {
-			icon: 'ti ti-pencil-heart',
-			text: i18n.ts.createUserSpecifiedNote,
-			action: () => {
-				const canonical = user.host === null ? `@${user.username}` : `@${user.username}@${user.host}`;
-				os.post({ specified: user, initialText: `${canonical} ` });
-			},
-		});
-
-		if ($i.policies.chatAvailability === 'available' && user.canChat && user.host == null) {
-			menuItems.push({
-				type: 'link',
-				icon: 'ti ti-messages',
-				text: i18n.ts._chat.chatWithThisUser,
-				to: `/chat/user/${user.id}`,
-			});
+			const chatLink = getUserChatLink(user);
+			if (chatLink) menuItems.push(chatLink);
 		}
 
 		menuItems.push({ type: 'divider' }, {
 			icon: user.isMuted ? 'ti ti-eye' : 'ti ti-eye-off',
 			text: user.isMuted ? i18n.ts.unmute : i18n.ts.mute,
 			action: toggleMute,
-		}, {
+		}, ...(showExtraActions ? [{
 			icon: user.isRenoteMuted ? 'ti ti-repeat' : 'ti ti-repeat-off',
 			text: user.isRenoteMuted ? i18n.ts.renoteUnmute : i18n.ts.renoteMute,
 			action: toggleRenoteMute,
-		}, {
+		}] : []), {
 			icon: 'ti ti-ban',
 			text: user.isBlocking ? i18n.ts.unblock : i18n.ts.block,
 			action: toggleBlock,

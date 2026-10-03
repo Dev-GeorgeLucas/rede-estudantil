@@ -27,14 +27,17 @@ SPDX-License-Identifier: AGPL-3.0-only
 									<span class="username"><MkAcct :user="user" :detail="true"/></span>
 									<span v-if="user.isLocked"><i class="ti ti-lock"></i></span>
 									<span v-if="user.isBot"><i class="ti ti-robot"></i></span>
-									<button v-if="$i && !isEditingMemo && !memoDraft" class="_button add-note-button" @click="showMemoTextarea">
+									<button v-if="isMvpFeatureVisible('profileExtraActions') && $i && !isEditingMemo && !memoDraft" class="_button add-note-button" @click="showMemoTextarea">
 										<i class="ti ti-edit"></i> {{ i18n.ts.addMemo }}
 									</button>
 								</div>
 							</div>
 							<span v-if="$i && $i.id != user.id && user.isFollowed" class="followed">{{ i18n.ts.followsYou }}</span>
 							<div class="actions">
-								<button class="menu _button" @click="menu"><i class="ti ti-dots"></i></button>
+								<button class="menu _button" :aria-label="i18n.ts.more" @click="menu"><i class="ti ti-dots"></i></button>
+								<button v-if="chatLink" v-tooltip="i18n.ts.startChat" type="button" class="_button" :class="$style.chatButton" :aria-label="i18n.ts.startChat" @click="router.pushByPath(chatLink.to)">
+									<i class="ti ti-messages" aria-hidden="true"></i>
+								</button>
 								<MkFollowButton v-if="$i?.id != user.id" v-model:user="user" :inline="true" :transparent="false" :full="true" class="koudoku"/>
 							</div>
 						</div>
@@ -70,7 +73,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 								<MkButton small @click="editModerationNote = true">{{ i18n.ts.addModerationNote }}</MkButton>
 							</div>
 						</div>
-						<div v-if="isEditingMemo || memoDraft" class="memo" :class="{'no-memo': !memoDraft}">
+						<div v-if="isMvpFeatureVisible('profileExtraActions') && (isEditingMemo || memoDraft)" class="memo" :class="{'no-memo': !memoDraft}">
 							<div class="heading">{{ i18n.ts.memo }}</div>
 							<textarea
 								ref="memoTextareaEl"
@@ -138,7 +141,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 						<MkLazy>
 							<XFiles :key="user.id" :user="user" @showMore="emit('showMoreFiles')"/>
 						</MkLazy>
-						<MkLazy>
+						<MkLazy v-if="isMvpFeatureVisible('profileDetails')">
 							<XActivity :key="user.id" :user="user"/>
 						</MkLazy>
 					</template>
@@ -151,7 +154,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 			</div>
 			<div v-if="!narrow" class="sub _gaps" style="container-type: inline-size;">
 				<XFiles :key="user.id" :user="user" @showMore="emit('showMoreFiles')"/>
-				<XActivity :key="user.id" :user="user"/>
+				<XActivity v-if="isMvpFeatureVisible('profileDetails')" :key="user.id" :user="user"/>
 			</div>
 		</div>
 	</div>
@@ -171,7 +174,7 @@ import MkTextarea from '@/components/MkTextarea.vue';
 import MkOmit from '@/components/MkOmit.vue';
 import MkInfo from '@/components/MkInfo.vue';
 import MkButton from '@/components/MkButton.vue';
-import { getUserMenu } from '@/utility/get-user-menu.js';
+import { getUserMenu, getUserChatLink } from '@/utility/get-user-menu.js';
 import number from '@/filters/number.js';
 import { userPage } from '@/filters/user.js';
 import * as os from '@/os.js';
@@ -187,6 +190,7 @@ import MkSparkle from '@/components/MkSparkle.vue';
 import { prefer } from '@/preferences.js';
 import MkPullToRefresh from '@/components/MkPullToRefresh.vue';
 import { isBirthday } from '@/utility/is-birthday.js';
+import { isMvpFeatureVisible } from '@/mvp-visibility.js';
 
 function calcAge(birthdate: string): number {
 	const date = new Date(birthdate);
@@ -222,6 +226,7 @@ const emit = defineEmits<{
 const router = useRouter();
 
 const user = ref(props.user);
+const chatLink = computed(() => getUserChatLink(user.value));
 const narrow = ref<null | boolean>(null);
 const rootEl = useTemplateRef('rootEl');
 const bannerEl = useTemplateRef('bannerEl');
@@ -764,6 +769,28 @@ onDeactivated(disposeBannerParallaxResizeObserver);
 </style>
 
 <style lang="scss" module>
+.chatButton {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	vertical-align: bottom;
+	box-sizing: border-box;
+	width: 44px;
+	height: 44px;
+	min-width: 44px;
+	min-height: 44px;
+	margin-left: 4px;
+	border: 1px solid var(--MI_THEME-fg);
+	border-radius: 50%;
+	background: var(--MI_THEME-panel);
+	color: var(--MI_THEME-fg);
+
+	&:focus-visible {
+		outline: 2px solid var(--MI_THEME-focus);
+		outline-offset: 2px;
+	}
+}
+
 .tl {
 	background: var(--MI_THEME-bg);
 	border-radius: var(--MI-radius);

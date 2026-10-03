@@ -13,7 +13,7 @@ import { genSearchIndexes } from '@/utility/inapp-search.js';
 import UserProfile from '@/pages/user/index.vue';
 import Statusbars from '@/ui/_common_/statusbars.vue';
 
-const session = vi.hoisted(() => ({ user: null as null | { isAdmin: boolean; isModerator: boolean; policies: { chatAvailability: string } }, api: vi.fn(), execute: vi.fn() }));
+const session = vi.hoisted(() => ({ user: null as null | { id: string; isAdmin: boolean; isModerator: boolean; policies: { chatAvailability: string } }, api: vi.fn(), execute: vi.fn() }));
 vi.mock('@/i.js', () => ({
 	get $i() { return session.user; },
 	get iAmModerator() { return !!(session.user?.isAdmin || session.user?.isModerator); },
@@ -31,6 +31,8 @@ vi.mock('@/pages/user/achievements.vue', () => ({ __esModule: true, default: { t
 vi.mock('@/pages/user/reactions.vue', () => ({ __esModule: true, default: { template: '<div>Reactions content</div>' } }));
 vi.mock('@/pages/user/clips.vue', () => ({ __esModule: true, default: { template: '<div>Clips content</div>' } }));
 vi.mock('@/pages/user/lists.vue', () => ({ __esModule: true, default: { template: '<div>Lists content</div>' } }));
+vi.mock('@/pages/my-clips/index.vue', () => ({ __esModule: true, default: { name: 'MyClips' } }));
+vi.mock('@/pages/my-lists/index.vue', () => ({ __esModule: true, default: { name: 'MyLists' } }));
 vi.mock('@/pages/admin-user.vue', () => ({ __esModule: true, default: { name: 'AdminUser' } }));
 vi.mock('@/pages/timeline.vue', () => ({ __esModule: true, default: { name: 'Following' } }));
 vi.mock('@/pages/_loading_.vue', () => ({ __esModule: true, default: {} }));
@@ -42,7 +44,7 @@ vi.mock('@/ui/_common_/statusbar-rss.vue', () => ({ __esModule: true, default: {
 
 const roles = ['visitor', 'user', 'moderator', 'admin'] as const;
 function setRole(role: typeof roles[number]) {
-	session.user = role === 'visitor' ? null : { isAdmin: role === 'admin', isModerator: role === 'moderator', policies: { chatAvailability: 'available' } };
+	session.user = role === 'visitor' ? null : { id: 'viewer', isAdmin: role === 'admin', isModerator: role === 'moderator', policies: { chatAvailability: 'available' } };
 }
 
 const blocked = [
@@ -51,6 +53,8 @@ const blocked = [
 	'/play', '/play/new', '/play/saved', '/play/saved/edit', '/@student/flashs', '/@student/play',
 	'/gallery', '/gallery/new', '/gallery/saved', '/gallery/saved/edit', '/@student/gallery',
 	'/settings/statusbar', '/settings/deck', '/@student@remote.test/pages', '/@student/%66lashs',
+	...['activity', 'reactions', 'clips', 'lists'].flatMap(tab => [`/@student/${tab}`, `/@student@remote.test/${tab}`]),
+	'/@student/%61ctivity', '/@student/re%61ctions', '/@student/%63lips', '/@student/%6cists',
 	'/@student/raw', '/@student@remote.test/raw', '/@student/%72aw', '/@student@remote.test/r%61w',
 ];
 const kept = ['/', '/explore', '/chat', '/channels', '/announcements', '/my/notifications', '/my/drive', '/my/lists', '/my/favorites', '/my/clips', '/settings', '/admin', '/admin/abuses', '/oauth/authorize', '/miauth/session', '/share'];
@@ -81,8 +85,9 @@ describe('MVP secondary features', () => {
 		expect(session.execute).not.toHaveBeenCalled();
 	});
 
-	test.each(roles.flatMap(role => [null, 'remote.test'].flatMap(host => [390, 1440].map(width => ({ role, host, width })))))('$role: profile tabs for $host at $width px omit Raw and retain core features', async ({ role, host, width }) => {
+	test.each(roles.flatMap(role => [null, 'remote.test'].flatMap(host => [390, 1440].flatMap(width => [false, true].map(own => ({ role, host, width, own }))))))('$role: profile tabs for $host at $width px (own=$own) retain core features', async ({ role, host, width, own }) => {
 		setRole(role);
+		if (own && session.user) session.user.id = 'student';
 		window.innerWidth = width;
 		session.api.mockResolvedValue({ id: 'student', username: 'student', host, publicReactions: true });
 		const view = render(UserProfile, {
@@ -93,15 +98,28 @@ describe('MVP secondary features', () => {
 			} } },
 		});
 		await waitFor(() => expect(view.queryByText('Profile')).not.toBeNull());
-		for (const tab of ['pages', 'flashs', 'gallery', 'raw']) expect(view.container.querySelector(`[data-tab="${tab}"]`)).toBeNull();
+		for (const tab of ['pages', 'flashs', 'gallery', 'raw', 'activity', 'reactions', 'clips', 'lists']) expect(view.container.querySelector(`[data-tab="${tab}"]`)).toBeNull();
 		expect(view.queryByText('Raw')).toBeNull();
-		const tabs = ['home', 'notes', 'files', 'activity', ...(host == null ? ['achievements'] : []), 'reactions', 'clips', 'lists'];
+		const tabs = ['home', 'notes', 'files', ...(host == null ? ['achievements'] : [])];
 		expect(Array.from(view.container.querySelectorAll('[data-tab]'), el => el.getAttribute('data-tab'))).toEqual(tabs);
 		for (const tab of tabs) {
 			await fireEvent.click(view.container.querySelector(`[data-tab="${tab}"]`)!);
 			await waitFor(() => expect(view.queryByText(tab === 'home' ? 'Profile' : `${tab[0].toUpperCase()}${tab.slice(1)} content`)).not.toBeNull());
 		}
 		expect(session.api).toHaveBeenCalledExactlyOnceWith('users/show', { username: 'student', host });
+	});
+
+	test.each(['user', 'moderator', 'admin'] as const)('%s: personal clips and lists keep their own routes', async role => {
+		setRole(role);
+		const { createRouter } = await import('@/router.js');
+		for (const [path, name] of [['/my/clips', 'MyClips'], ['/my/lists', 'MyLists']]) {
+			const router = createRouter(path);
+			router.init();
+			const route = router.current.route;
+			if (!('component' in route)) throw new Error(`Missing personal route: ${path}`);
+			const component = await (route.component as { __asyncLoader: () => Promise<{ name: string }> }).__asyncLoader();
+			expect(component.name).toBe(name);
+		}
 	});
 
 	test.each(roles)('%s: administrative user tools retain their existing route permissions', async role => {
