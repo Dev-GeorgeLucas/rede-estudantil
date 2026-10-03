@@ -14,7 +14,7 @@ export function canUseAdvancedFeatures(): boolean {
 	return !simplifyMvp || $i?.isAdmin === true;
 }
 
-export type MvpSecondaryFeature = 'antennas' | 'pages' | 'play' | 'gallery' | 'rss' | 'statusbar' | 'deck';
+export type MvpSecondaryFeature = 'antennas' | 'pages' | 'play' | 'gallery' | 'rss' | 'statusbar' | 'deck' | 'userRaw';
 
 export function isMvpFeatureVisible(_feature: MvpSecondaryFeature): boolean {
 	return !simplifyMvp;
@@ -32,6 +32,7 @@ const secondaryPaths: Partial<Record<MvpSecondaryFeature, RegExp>> = {
 	gallery: /^\/(?:gallery|@[^/]+\/gallery)(?:\/|$)/,
 	statusbar: /^\/settings\/statusbar(?:\/|$)/,
 	deck: /^\/settings\/deck(?:\/|$)/,
+	userRaw: /^\/@[^/]+\/raw(?:\/|$)/,
 };
 
 const advancedPaths = [

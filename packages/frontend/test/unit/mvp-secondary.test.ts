@@ -4,7 +4,7 @@
  */
 
 import { afterEach, describe, expect, test, vi } from 'vitest';
-import { cleanup, render, waitFor } from '@testing-library/vue';
+import { cleanup, fireEvent, render, waitFor } from '@testing-library/vue';
 import { ref } from 'vue';
 import { preferReactive } from '../setup.unit.js';
 import { filterMvpSearchIndex, getMvpUi, isMvpPathVisible } from '@/mvp-visibility.js';
@@ -24,6 +24,14 @@ vi.mock('@/utility/misskey-api.js', () => ({ misskeyApi: session.api }));
 vi.mock('@/instance.js', () => ({ instance: { federation: 'all' } }));
 vi.mock('@/server-context.js', () => ({ serverContext: null, assertServerContext: () => false }));
 vi.mock('@/pages/user/home.vue', () => ({ __esModule: true, default: { template: '<div>Profile</div>' } }));
+vi.mock('@/pages/user/notes.vue', () => ({ __esModule: true, default: { template: '<div>Notes content</div>' } }));
+vi.mock('@/pages/user/files.vue', () => ({ __esModule: true, default: { template: '<div>Files content</div>' } }));
+vi.mock('@/pages/user/activity.vue', () => ({ __esModule: true, default: { template: '<div>Activity content</div>' } }));
+vi.mock('@/pages/user/achievements.vue', () => ({ __esModule: true, default: { template: '<div>Achievements content</div>' } }));
+vi.mock('@/pages/user/reactions.vue', () => ({ __esModule: true, default: { template: '<div>Reactions content</div>' } }));
+vi.mock('@/pages/user/clips.vue', () => ({ __esModule: true, default: { template: '<div>Clips content</div>' } }));
+vi.mock('@/pages/user/lists.vue', () => ({ __esModule: true, default: { template: '<div>Lists content</div>' } }));
+vi.mock('@/pages/admin-user.vue', () => ({ __esModule: true, default: { name: 'AdminUser' } }));
 vi.mock('@/pages/timeline.vue', () => ({ __esModule: true, default: { name: 'Following' } }));
 vi.mock('@/pages/_loading_.vue', () => ({ __esModule: true, default: {} }));
 vi.mock('@/pages/_error_.vue', () => ({ __esModule: true, default: {} }));
@@ -43,6 +51,7 @@ const blocked = [
 	'/play', '/play/new', '/play/saved', '/play/saved/edit', '/@student/flashs', '/@student/play',
 	'/gallery', '/gallery/new', '/gallery/saved', '/gallery/saved/edit', '/@student/gallery',
 	'/settings/statusbar', '/settings/deck', '/@student@remote.test/pages', '/@student/%66lashs',
+	'/@student/raw', '/@student@remote.test/raw', '/@student/%72aw', '/@student@remote.test/r%61w',
 ];
 const kept = ['/', '/explore', '/chat', '/channels', '/announcements', '/my/notifications', '/my/drive', '/my/lists', '/my/favorites', '/my/clips', '/settings', '/admin', '/admin/abuses', '/oauth/authorize', '/miauth/session', '/share'];
 
@@ -72,17 +81,38 @@ describe('MVP secondary features', () => {
 		expect(session.execute).not.toHaveBeenCalled();
 	});
 
-	test.each(roles)('%s: profile tabs retain core features and omit secondary content', async role => {
+	test.each(roles.flatMap(role => [null, 'remote.test'].flatMap(host => [390, 1440].map(width => ({ role, host, width })))))('$role: profile tabs for $host at $width px omit Raw and retain core features', async ({ role, host, width }) => {
 		setRole(role);
-		session.api.mockResolvedValue({ id: 'student', username: 'student', host: null, publicReactions: true });
+		window.innerWidth = width;
+		session.api.mockResolvedValue({ id: 'student', username: 'student', host, publicReactions: true });
 		const view = render(UserProfile, {
-			props: { acct: 'student' },
-			global: { components: { PageWithHeader: { props: ['tabs'], template: '<div><button v-for="tab in tabs" :data-tab="tab.key">{{ tab.title }}</button><slot/></div>' } } },
+			props: { acct: host ? `student@${host}` : 'student' },
+			global: { components: { PageWithHeader: {
+				props: ['tabs'], emits: ['update:tab'],
+				template: '<div><button v-for="tab in tabs" :data-tab="tab.key" @click="$emit(\'update:tab\', tab.key)">{{ tab.title }}</button><slot/></div>',
+			} } },
 		});
 		await waitFor(() => expect(view.queryByText('Profile')).not.toBeNull());
-		for (const tab of ['pages', 'flashs', 'gallery']) expect(view.container.querySelector(`[data-tab="${tab}"]`)).toBeNull();
-		for (const tab of ['home', 'notes', 'files', 'activity', 'achievements', 'reactions', 'clips', 'lists']) expect(view.container.querySelector(`[data-tab="${tab}"]`)).not.toBeNull();
-		expect(session.api).toHaveBeenCalledExactlyOnceWith('users/show', { username: 'student', host: null });
+		for (const tab of ['pages', 'flashs', 'gallery', 'raw']) expect(view.container.querySelector(`[data-tab="${tab}"]`)).toBeNull();
+		expect(view.queryByText('Raw')).toBeNull();
+		const tabs = ['home', 'notes', 'files', 'activity', ...(host == null ? ['achievements'] : []), 'reactions', 'clips', 'lists'];
+		expect(Array.from(view.container.querySelectorAll('[data-tab]'), el => el.getAttribute('data-tab'))).toEqual(tabs);
+		for (const tab of tabs) {
+			await fireEvent.click(view.container.querySelector(`[data-tab="${tab}"]`)!);
+			await waitFor(() => expect(view.queryByText(tab === 'home' ? 'Profile' : `${tab[0].toUpperCase()}${tab.slice(1)} content`)).not.toBeNull());
+		}
+		expect(session.api).toHaveBeenCalledExactlyOnceWith('users/show', { username: 'student', host });
+	});
+
+	test.each(roles)('%s: administrative user tools retain their existing route permissions', async role => {
+		setRole(role);
+		vi.resetModules();
+		const { ROUTE_DEF } = await import('@/router.definition.js');
+		const route = ROUTE_DEF.find(r => r.path === '/admin/user/:userId')!;
+		if (!('component' in route)) throw new Error('Missing admin user component');
+		const component = await (route.component as { __asyncLoader: () => Promise<{ name: string }> }).__asyncLoader();
+		expect(component.name).toBe(role === 'admin' || role === 'moderator' ? 'AdminUser' : 'NotFound');
+		for (const path of ['/@raw', '/@raw@remote.test', '/admin/user/student#raw']) expect(isMvpPathVisible(path)).toBe(true);
 	});
 
 	test.each(roles)('%s: generated settings search omits secondary resources and descendants', role => {
