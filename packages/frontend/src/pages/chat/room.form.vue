@@ -8,6 +8,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 	:class="$style.root"
 	@dragover.stop="onDragover"
 	@drop.stop="onDrop"
+	@keydown="onKeydown"
 >
 	<textarea
 		ref="textareaEl"
@@ -16,7 +17,8 @@ SPDX-License-Identifier: AGPL-3.0-only
 		class="_acrylic"
 		:placeholder="i18n.ts.inputMessageHere"
 		:readonly="textareaReadOnly"
-		@keydown="onKeydown"
+		@compositionstart="composing = true"
+		@compositionend="composing = false"
 		@paste="onPaste"
 	></textarea>
 	<footer :class="$style.footer">
@@ -60,9 +62,10 @@ const text = ref<string>('');
 const file = ref<Misskey.entities.DriveFile | null>(null);
 const sending = ref(false);
 const textareaReadOnly = ref(false);
+const composing = ref(false);
 let autocompleteInstance: Autocomplete | null = null;
 
-const canSend = computed(() => (text.value != null && text.value !== '') || file.value != null);
+const canSend = computed(() => (text.value != null && text.value.trim() !== '') || file.value != null);
 
 function getDraftKey() {
 	return props.user ? 'user:' + props.user.id : 'room:' + props.room?.id;
@@ -154,18 +157,18 @@ function onDrop(ev: DragEvent): void {
 }
 
 function onKeydown(ev: KeyboardEvent) {
-	if (ev.isComposing || ev.key === 'Process' || ev.keyCode === 229) return;
-	if (ev.key === 'Enter') {
-		if (prefer.s['chat.sendOnEnter']) {
-			if (!(ev.ctrlKey || ev.metaKey || ev.shiftKey)) {
-				send();
-			}
-		} else {
-			if ((ev.ctrlKey || ev.metaKey)) {
-				send();
-			}
-		}
-	}
+	// Handle bubbling only after autocomplete has had a chance to consume Enter.
+	if (ev.target !== textareaEl.value || ev.defaultPrevented || textareaReadOnly.value) return;
+	if (composing.value || ev.isComposing || ev.key === 'Process' || ev.keyCode === 229) return;
+	if (ev.key !== 'Enter' || ev.shiftKey || ev.altKey) return;
+
+	const shouldSend = prefer.s['chat.sendOnEnter']
+		? !(ev.ctrlKey || ev.metaKey)
+		: ev.ctrlKey || ev.metaKey;
+	if (!shouldSend) return;
+
+	ev.preventDefault();
+	if (!ev.repeat) send();
 }
 
 function chooseFile(ev: PointerEvent) {
@@ -189,7 +192,7 @@ function onChangeFile() {
 }
 
 function send() {
-	if (!canSend.value) return;
+	if (!canSend.value || sending.value || (!props.user && !props.room)) return;
 
 	sending.value = true;
 
