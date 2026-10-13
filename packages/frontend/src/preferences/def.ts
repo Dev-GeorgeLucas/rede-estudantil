@@ -520,7 +520,7 @@ export const PREF_DEF = definePreferences({
 		default: false,
 	},
 	'chat.sendOnEnter': {
-		default: false,
+		default: DEFAULT_DEVICE_KIND === 'desktop',
 	},
 
 	'game.dropAndFusion': {
