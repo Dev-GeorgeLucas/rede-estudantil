@@ -27,6 +27,8 @@ interface RouteDefBase {
 }
 
 interface RouteDefWithComponent extends RouteDefBase {
+	/** Share one cached page across URL tabs when the page manages its own tab state. */
+	cacheKey?: string;
 	component: Component,
 }
 

@@ -11,13 +11,15 @@ import { useStream } from '@/stream.js';
 import { Paginator } from '@/utility/paginator.js';
 import { updateColumn } from '@/deck.js';
 import { availableBasicTimelines, normalizeTimelineSource } from '@/timelines.js';
-import Timeline from '@/pages/timeline.vue';
+import VisitorDashboard from '@/components/MkVisitorDashboard.vue';
+import Timeline from '@/pages/timeline.following.vue';
 import WidgetTimeline from '@/widgets/WidgetTimeline.vue';
 import DeckTimeline from '@/ui/deck/tl-column.vue';
 import StreamingTimeline from '@/components/MkStreamingNotesTimeline.vue';
 
-vi.mock('@/i.js', () => ({ $i: { id: 'me', policies: { ltlAvailable: true, gtlAvailable: true } } }));
-vi.mock('@/instance.js', () => ({ instance: { policies: { ltlAvailable: true, gtlAvailable: true } } }));
+const session = vi.hoisted(() => ({ visitor: false }));
+vi.mock('@/i.js', () => ({ get $i() { return session.visitor ? null : { id: 'me', policies: { ltlAvailable: true, gtlAvailable: true } }; }, iAmModerator: false }));
+vi.mock('@/instance.js', () => ({ instance: { policies: { ltlAvailable: true, gtlAvailable: true }, clientOptions: { showActivitiesForVisitor: false, showTimelineForVisitor: true } } }));
 vi.mock('@/store.js', async () => {
 	const { reactive, computed } = await import('vue');
 	const state = reactive({
@@ -55,6 +57,10 @@ vi.mock('@/router.js', () => ({ useRouter: () => ({ push: vi.fn() }) }));
 vi.mock('@/page.js', () => ({ definePage: vi.fn() }));
 vi.mock('@/deck.js', () => ({ updateColumn: vi.fn() }));
 vi.mock('@/ui/deck/tl-note-notification.js', () => ({ soundSettingsButton: vi.fn() }));
+vi.mock('@/components/MkSigninDialog.vue', () => ({ default: { render: () => null } }));
+vi.mock('@/components/MkSignupDialog.vue', () => ({ default: { render: () => null } }));
+vi.mock('@/components/MkVisitorDashboard.ActiveUsersChart.vue', () => ({ default: { render: () => null } }));
+vi.mock('@/ui/_common_/common.js', () => ({ openInstanceMenu: vi.fn() }));
 vi.mock('@/components/MkNote.vue', () => ({ default: { render: () => null } }));
 vi.mock('@/components/MkPostForm.vue', () => ({ default: { render: () => null } }));
 vi.mock('@/components/MkButton.vue', () => ({ default: { render: () => null } }));
@@ -73,11 +79,19 @@ function expectFollowingTransport() {
 
 beforeEach(() => {
 	vi.clearAllMocks();
+	session.visitor = false;
 	store.set('tl', { ...store.s.tl, src: 'home' });
 });
 afterEach(cleanup);
 
 describe('MVP timeline fallback', () => {
+	test('visitor dashboard alongside Feed never mounts a disabled public timeline or a personal fallback', () => {
+		session.visitor = true;
+		render(VisitorDashboard, { global: { stubs: { MkA: { template: '<a><slot/></a>' } } } });
+		expect(Paginator).not.toHaveBeenCalled();
+		expect(useStream().useChannel).not.toHaveBeenCalled();
+	});
+
 	test('only offers Following even when server policies allow public timelines', () => {
 		expect(availableBasicTimelines()).toEqual(['home']);
 	});

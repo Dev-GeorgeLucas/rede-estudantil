@@ -97,7 +97,7 @@ describe('MVP federation surfaces', () => {
 		}
 		if (role === 'visitor') {
 			const timeline = ROUTE_DEF.find(route => route.path === '/timeline')!;
-			expect((await loadComponent(timeline.component)).name).toBe('Explore');
+			expect('redirect' in timeline && timeline.redirect).toBe('/feed');
 		}
 	});
 });

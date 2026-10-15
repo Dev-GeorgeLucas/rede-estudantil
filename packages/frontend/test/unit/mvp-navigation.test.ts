@@ -61,6 +61,7 @@ afterEach(() => { cleanup(); vi.clearAllMocks(); visitor.active = false; });
 describe('MVP shared navigation', () => {
 	test.each([
 		{ stored: [], expected: [] },
+		{ stored: ['explore', '-', 'explore', 'notifications', '-', 'explore'], expected: ['notifications'] },
 		{ stored: ['-', '-'], expected: [] },
 		{ stored: ['-', 'ui', '-', 'antennas', '-'], expected: [] },
 		{ stored: ['-', 'notifications', '-', '-'], expected: ['notifications'] },
@@ -89,23 +90,23 @@ describe('MVP shared navigation', () => {
 		preferReactive.menu = ref([...layout]);
 		preferReactive.showNavbarSubButtons = ref(false);
 		const view = render(component, { props, global });
-		function menuBetweenFollowingAndMore() {
-			const following = view.container.querySelector('a[href="/"]')!;
+		function menuBetweenFeedAndMore() {
+			const following = view.container.querySelector('a[href="/feed"]')!;
 			const more = view.container.querySelector('.ti-grid-dots, .ti-dots')!.closest('button')!;
 			const siblings = Array.from(following.parentElement!.children);
 			return siblings.slice(siblings.indexOf(following) + 1, siblings.indexOf(more)).map(el => el.getAttribute('href') ?? '-');
 		}
-		expect(menuBetweenFollowingAndMore()).toEqual(['/my/notifications', '-', '/chat', '-']);
+		expect(menuBetweenFeedAndMore()).toEqual(['/my/notifications', '-', '/chat', '-']);
 		expect(preferState.menu).toEqual(layout);
 		// Live updates/restored layouts must use the same projection in every variant.
 		preferReactive.menu.value = ['-', 'ui', '-', 'antennas', '-'];
-		await waitFor(() => expect(menuBetweenFollowingAndMore()).toEqual(['-']));
+		await waitFor(() => expect(menuBetweenFeedAndMore()).toEqual(['-']));
 		view.unmount();
 	});
 
 	test('navbar editor normalizes empty groups while reordering, removing and saving preserves hidden items', async () => {
 		$i!.isAdmin = false;
-		const layout = ['-', 'notifications', '-', 'ui', '-', '-', 'chat', '-', 'antennas', '-'];
+		const layout = ['-', 'notifications', '-', 'ui', '-', '-', 'chat', '-', 'antennas', 'explore', 'explore', '-'];
 		preferState.menu = [...layout];
 		Object.assign(prefer, { model: () => ref(false), commit: actions.commit });
 		const view = render(NavbarSettings, { global });
@@ -166,16 +167,17 @@ describe('MVP shared navigation', () => {
 		$i!.isModerator = role === 'moderator';
 		for (const [component, width, props] of [[Navbar, 1440, {}], [Navbar, 390, { asDrawer: true }], [DeckNavbar, 1440, {}]] as const) {
 			window.innerWidth = width;
-			const layout = [...savedMenu, ...hiddenMenu, 'explore', 'announcements', 'lists', 'favorites', 'clips'];
+			const layout = [...savedMenu, ...hiddenMenu, 'explore', 'explore', 'announcements', 'lists', 'favorites', 'clips'];
 			preferState.menu = layout;
 			preferReactive.menu = ref(layout);
 			preferReactive.showNavbarSubButtons = ref(false);
 			const view = render(component, { props, global });
-			for (const path of ['/chat', '/channels', '/my/notifications', '/my/drive', '/explore', '/announcements', '/my/lists', '/my/favorites', '/my/clips']) {
+			for (const path of ['/chat', '/channels', '/my/notifications', '/my/drive', '/announcements', '/my/lists', '/my/favorites', '/my/clips']) {
 				expect(view.container.querySelector(`a[href="${path}"]`), path).not.toBeNull();
 			}
-			for (const path of ['/my/antennas', '/pages', '/play', '/gallery']) expect(view.container.querySelector(`a[href="${path}"]`)).toBeNull();
+			for (const path of ['/my/antennas', '/pages', '/play', '/gallery', '/explore']) expect(view.container.querySelector(`a[href="${path}"]`)).toBeNull();
 			expect(view.queryByText(i18n.ts.switchUi)).toBeNull();
+			expect(view.container.querySelectorAll('a[href="/feed"]')).toHaveLength(1);
 			expect(!!view.container.querySelector('.ti-tool')).toBe(role === 'admin');
 			expect(!!view.container.querySelector('a[href="/admin"]')).toBe(role !== 'user');
 			const post = view.container.querySelector('[data-testid="open-post-form"]') ?? view.container.querySelector('.ti-pencil')!;
@@ -186,8 +188,8 @@ describe('MVP shared navigation', () => {
 		}
 		preferState.menu = [];
 		const more = render(LaunchPad, { global });
-		for (const path of ['/chat', '/channels', '/my/notifications', '/my/drive', '/explore', '/announcements', '/my/lists', '/my/favorites', '/my/clips']) expect(more.container.querySelector(`a[href="${path}"]`)).not.toBeNull();
-		for (const path of ['/my/antennas', '/pages', '/play', '/gallery']) expect(more.container.querySelector(`a[href="${path}"]`)).toBeNull();
+		for (const path of ['/chat', '/channels', '/my/notifications', '/my/drive', '/announcements', '/my/lists', '/my/favorites', '/my/clips']) expect(more.container.querySelector(`a[href="${path}"]`)).not.toBeNull();
+		for (const path of ['/my/antennas', '/pages', '/play', '/gallery', '/explore']) expect(more.container.querySelector(`a[href="${path}"]`)).toBeNull();
 		expect(more.queryByText(i18n.ts.switchUi)).toBeNull();
 		expect(!!more.queryByText(i18n.ts.tools)).toBe(role === 'admin');
 	});
@@ -201,9 +203,10 @@ describe('MVP shared navigation', () => {
 			for (const width of [390, 1440]) {
 				window.innerWidth = width;
 				const view = render(component, { global });
-				for (const path of ['/my/antennas', '/pages', '/play', '/gallery']) expect(view.container.querySelector(`a[href="${path}"]`)).toBeNull();
+				for (const path of ['/my/antennas', '/pages', '/play', '/gallery', '/explore']) expect(view.container.querySelector(`a[href="${path}"]`)).toBeNull();
 				expect(view.queryByText(i18n.ts.switchUi)).toBeNull();
-				expect(view.container.querySelector('a[href="/explore"]')).not.toBeNull();
+				expect(view.container.querySelector('a[href="/explore"]')).toBeNull();
+				if (component !== LaunchPad) expect(view.container.querySelectorAll('a[href="/feed"]')).toHaveLength(1);
 				view.unmount();
 			}
 		}

@@ -5,11 +5,16 @@ SPDX-License-Identifier: AGPL-3.0-only
 
 <template>
 <div ref="el" :class="$style.tabs" :style="{ '--tabAnchorName': tabAnchorName }" @wheel="onTabWheel">
-	<div :class="$style.tabsInner">
+	<div :class="$style.tabsInner" :role="tabs.length > 0 && tabs.every(t => t.panelId) ? 'tablist' : undefined" @keydown="onTabKeydown">
 		<button
 			v-for="t in tabs"
+			:id="t.panelId ? `${t.panelId}-tab` : undefined"
 			:ref="(el) => tabRefs[t.key] = (el as HTMLElement)"
 			v-tooltip.noDelay="t.title"
+			:role="t.panelId ? 'tab' : undefined"
+			:aria-selected="t.panelId ? t.key === tab : undefined"
+			:aria-controls="t.panelId"
+			:tabindex="t.panelId ? (t.key === tab ? 0 : -1) : undefined"
 			class="_button"
 			:class="[$style.tab, {
 				[$style.active]: t.key != null && t.key === props.tab,
@@ -20,7 +25,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 			@click="(ev) => onTabClick(t, ev)"
 		>
 			<div :class="$style.tabInner">
-				<i v-if="t.icon" :class="[$style.tabIcon, t.icon]"></i>
+				<i v-if="t.icon" :class="[$style.tabIcon, t.icon]" aria-hidden="true"></i>
 				<div
 					v-if="!t.iconOnly || (!prefer.s.animation && t.key === tab)"
 					:class="$style.tabTitle"
@@ -50,6 +55,7 @@ export type Tab = {
 	iconOnly?: boolean;
 	title: string;
 	icon?: string;
+	panelId?: string;
 };
 </script>
 
@@ -57,6 +63,7 @@ export type Tab = {
 import { nextTick, onMounted, onUnmounted, useTemplateRef, watch } from 'vue';
 import { prefer } from '@/preferences.js';
 import { genId } from '@/utility/id.js';
+import { onTabKeydown } from '@/utility/tab-keyboard.js';
 
 const cssAnchorSupported = CSS.supports('position-anchor', '--anchor-name');
 const tabAnchorName = `--${genId()}-currentTab`;
@@ -229,6 +236,11 @@ onUnmounted(() => {
 	height: 100%;
 	font-weight: normal;
 	opacity: 0.7;
+
+	&:focus-visible {
+		outline: 2px solid var(--MI_THEME-accent);
+		outline-offset: -2px;
+	}
 
 	&:hover {
 		opacity: 1;
