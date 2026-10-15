@@ -56,6 +56,8 @@ export const navbarItemDef = reactive<{
 		to: '/my/follow-requests',
 	},
 	explore: {
+		// Keep the legacy preference key; discovery is now part of the fixed Feed link.
+		show: computed(() => false),
 		title: i18n.ts.explore,
 		icon: 'ti ti-hash',
 		to: '/explore',

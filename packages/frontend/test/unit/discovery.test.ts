@@ -5,14 +5,13 @@
 
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { cleanup, fireEvent, render } from '@testing-library/vue';
+import { defineComponent, h, KeepAlive, nextTick, ref } from 'vue';
 import Explore from '@/pages/explore.vue';
+import Users from '@/pages/explore.users.vue';
 import { Paginator } from '@/utility/paginator.js';
 
 const stream = vi.hoisted(() => ({ on: vi.fn(), dispose: vi.fn() }));
 vi.mock('@/stream.js', () => ({ useStream: () => ({ useChannel: () => stream }) }));
-
-vi.mock('@/i.js', () => ({ $i: { id: 'me', policies: {} }, iAmModerator: false }));
-vi.mock('@/page.js', () => ({ definePage: vi.fn() }));
 vi.mock('@/utility/paginator.js', () => ({
 	Paginator: vi.fn(class {
 		reload = vi.fn(async () => {});
@@ -26,69 +25,48 @@ vi.mock('@/components/MkUserList.vue', () => ({ default: {
 	props: ['paginator'], template: '<div data-testid="users">{{ paginator.options.params.origin }}</div>',
 } }));
 vi.mock('@/components/MkFoldableSection.vue', () => ({ default: { template: '<section><slot/></section>' } }));
-vi.mock('@/pages/timeline.vue', () => ({ default: { name: 'Following' } }));
-vi.mock('@/pages/_loading_.vue', () => ({ default: {} }));
-vi.mock('@/pages/_error_.vue', () => ({ default: {} }));
-
-const options = { global: { stubs: { PageWithHeader: {
-	props: ['tabs', 'tab', 'actions'], emits: ['update:tab'],
-	template: '<div><button v-for="item in tabs" :key="item.key" @click="$emit(\'update:tab\', item.key)">{{ item.key }}</button><button v-for="action in actions" data-testid="reload" @click="action.handler">refresh</button><slot/></div>',
-} } } };
 
 beforeEach(() => vi.clearAllMocks());
 afterEach(cleanup);
 
-describe('Explore discovery', () => {
-	test.each([undefined, 'featured', 'roles', 'polls', 'unknown'])('opens chronological notes for legacy tab %s', initialTab => {
-		const view = render(Explore, { ...options, props: { initialTab } });
+describe('Feed discovery content', () => {
+	test('keeps the discovery paginator, fixed chronological controls and refresh action', async () => {
+		const view = render(defineComponent({ components: { Explore }, template: '<Explore ref="content"/><button @click="$refs.content.headerActions[0].handler()">refresh</button>' }));
 		expect(view.getByTestId('feed').textContent).toBe('notes/discovery');
-		expect(view.getAllByRole('button').map(button => button.textContent)).toEqual(['notes', 'users', 'refresh']);
-		expect(Paginator).toHaveBeenCalledWith('notes/discovery', { limit: 10 });
-	});
-
-	test('keeps chronological controls fixed and offers explicit refresh', async () => {
-		const view = render(Explore, options);
 		expect(view.getByTestId('feed').getAttribute('data-controls')).toBe('false');
-		await fireEvent.click(view.getByTestId('reload'));
+		expect(Paginator).toHaveBeenCalledWith('notes/discovery', { limit: 10 });
+		await fireEvent.click(view.getByRole('button', { name: 'refresh' }));
 		expect(vi.mocked(Paginator).mock.results[0].value.reload).toHaveBeenCalledOnce();
+		view.unmount();
 	});
 
-	test('reloads after follow changes and disposes its stream subscription', async () => {
-		const view = render(Explore, options);
-		for (const event of ['follow', 'unfollow']) {
-			await stream.on.mock.calls.find(call => call[0] === event)![1]();
-		}
-		expect(vi.mocked(Paginator).mock.results[0].value.reload).toHaveBeenCalledTimes(2);
+	test('reloads active discovery after follow changes; defers hidden refresh without new subscriptions', async () => {
+		const visible = ref(true);
+		const view = render(defineComponent({ setup: () => () => h(KeepAlive, () => visible.value ? h(Explore) : h('div')) }));
+		const reload = vi.mocked(Paginator).mock.results[0].value.reload;
+		const follow = stream.on.mock.calls.find(call => call[0] === 'follow')![1];
+		const unfollow = stream.on.mock.calls.find(call => call[0] === 'unfollow')![1];
+		follow();
+		expect(reload).toHaveBeenCalledOnce();
+		visible.value = false;
+		await nextTick();
+		follow();
+		unfollow();
+		expect(reload).toHaveBeenCalledOnce();
+		visible.value = true;
+		await nextTick();
+		expect(reload).toHaveBeenCalledTimes(2);
+		expect(Paginator).toHaveBeenCalledOnce();
+		expect(stream.on).toHaveBeenCalledTimes(2);
 		view.unmount();
 		expect(stream.dispose).toHaveBeenCalledOnce();
 	});
 
-	test('user discovery only requests local accounts and returns to notes', async () => {
-		const view = render(Explore, options);
-		await fireEvent.click(view.getByRole('button', { name: 'users' }));
+	test('preserves the three local user lists and their existing filters', () => {
+		const view = render(Users);
 		expect(view.getAllByTestId('users').map(node => node.textContent)).toEqual(['local', 'local', 'local']);
-		expect(vi.mocked(Paginator).mock.calls.map(call => call[0])).toEqual(['notes/discovery', 'users', 'users', 'users']);
-		await fireEvent.click(view.getByRole('button', { name: 'notes' }));
-		expect(view.getByTestId('feed').textContent).toBe('notes/discovery');
-	});
-
-	test('handles changing hash props without a blank page', async () => {
-		const view = render(Explore, { ...options, props: { initialTab: 'users' } });
-		expect(view.queryByTestId('feed')).toBeNull();
-		await view.rerender({ initialTab: 'roles' });
-		expect(view.getByTestId('feed')).not.toBeNull();
-	});
-
-	test('guards explore and its timeline alias, preserving admin roles and primary features', async () => {
-		const { ROUTE_DEF } = await import('@/router.definition.js');
-		for (const path of ['/explore', '/timeline']) {
-			const route = ROUTE_DEF.find(route => route.path === path);
-			expect(route && 'loginRequired' in route && route.loginRequired).toBe(true);
-		}
-		const admin = ROUTE_DEF.find(route => route.path === '/admin')!;
-		expect(admin.children.some(route => route.path === '/roles')).toBe(true);
-		for (const path of ['/', '/my/notifications', '/my/drive', '/channels', '/chat']) {
-			expect(ROUTE_DEF.some(route => route.path === path)).toBe(true);
+		for (const [sort, state] of [['+follower', 'alive'], ['+updatedAt', undefined], ['+createdAt', 'alive']]) {
+			expect(Paginator).toHaveBeenCalledWith('users', expect.objectContaining({ limit: 10, noPaging: true, params: expect.objectContaining({ origin: 'local', sort, ...(state ? { state } : {}) }) }));
 		}
 	});
 });

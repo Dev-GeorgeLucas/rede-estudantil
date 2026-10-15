@@ -4,182 +4,93 @@ SPDX-License-Identifier: AGPL-3.0-only
 -->
 
 <template>
-<PageWithHeader :tab="src" :actions="headerActions" :tabs="headerTabs" :swipable="true" :displayMyAvatar="true" :canOmitTitle="true" @update:tab="tab => { if (tab === 'explore') router.push('/explore'); }">
-	<div class="_spacer" style="--MI_SPACER-w: 800px;">
-		<MkTip v-if="isBasicTimeline(src)" :k="`tl.${src}`" style="margin-bottom: var(--MI-margin);">
-			{{ i18n.ts._timelineDescription[src] }}
-		</MkTip>
-		<MkPostForm v-if="prefer.r.showFixedPostForm.value" :class="$style.postForm" class="_panel" fixed style="margin-bottom: var(--MI-margin);"/>
-		<MkStreamingNotesTimeline
-			ref="tlComponent"
-			:key="src + withRenotes + withReplies + onlyFiles + withSensitive"
-			:class="$style.tl"
-			:src="src"
-			:withRenotes="withRenotes"
-			:withReplies="withReplies"
-			:withSensitive="withSensitive"
-			:onlyFiles="onlyFiles"
-			:sound="true"
-		/>
+<PageWithHeader ref="page" :tab="tab" :tabs="headerTabs" :actions="headerActions" :displayMyAvatar="!!$i" :overridePageMetadata="metadata" :preserveTabScroll="true" :retainScroll="false" :swipable="false" @update:tab="selectTab">
+	<div :id="`${id}-${tab}`" role="tabpanel" :aria-labelledby="`${id}-${tab}-tab`" tabindex="0">
+		<KeepAlive>
+			<component :is="contents[tab]" ref="content"/>
+		</KeepAlive>
 	</div>
 </PageWithHeader>
 </template>
 
 <script lang="ts" setup>
-import { computed, watch, useTemplateRef } from 'vue';
-import type { Tab } from '@/components/global/MkPageHeader.tabs.vue';
-import type { MenuItem } from '@/types/menu.js';
+import { computed, nextTick, onActivated, onDeactivated, ref, useId, useTemplateRef, watch } from 'vue';
 import type { PageHeaderItem } from '@/types/page-header.js';
-import MkStreamingNotesTimeline from '@/components/MkStreamingNotesTimeline.vue';
-import MkPostForm from '@/components/MkPostForm.vue';
-import * as os from '@/os.js';
-import { store } from '@/store.js';
-import { i18n } from '@/i18n.js';
 import { $i } from '@/i.js';
+import { i18n } from '@/i18n.js';
 import { definePage } from '@/page.js';
-import { deviceKind } from '@/utility/device-kind.js';
-import { deepMerge } from '@/utility/merge.js';
-import { hasWithReplies, isBasicTimeline, basicTimelineIconClass } from '@/timelines.js';
 import { useRouter } from '@/router.js';
-import { prefer } from '@/preferences.js';
+import { page as lazyPage } from '@/router.definition.js';
 
-const tlComponent = useTemplateRef('tlComponent');
+type FeedTab = 'following' | 'explore' | 'users';
 
 const router = useRouter();
-const src = 'home';
+const id = useId();
+const page = useTemplateRef<{ $el: HTMLElement }>('page');
+const content = useTemplateRef<{ headerActions?: PageHeaderItem[] }>('content');
+const headerActions = computed(() => content.value?.headerActions ?? []);
+const tab = ref<FeedTab>($i ? 'following' : 'users');
+const contents = {
+	following: lazyPage(() => import('./timeline.following.vue')),
+	explore: lazyPage(() => import('./explore.vue')),
+	users: lazyPage(() => import('./explore.users.vue')),
+};
+const headerTabs = computed(() => [
+	...($i ? [{ key: 'following', title: i18n.ts.following, icon: 'ti ti-home' }, { key: 'explore', title: i18n.ts.explore, icon: 'ti ti-hash' }] : []),
+	{ key: 'users', title: i18n.ts.users, icon: 'ti ti-users' },
+].map(item => ({ ...item, panelId: `${id}-${item.key}` })));
 
-// Keep old device preferences safe, including restored settings.
-watch(() => store.r.tl.value.src, value => {
-	if (value !== 'home') store.set('tl', deepMerge({ src: 'home' }, store.s.tl));
+// Keep a scroll position per tab, including an anchor for notes using render skipping.
+const positions = new Map<FeedTab, { top: number; anchor?: string; offset?: number }>();
+let active = true;
+
+function savePosition(key: FeedTab) {
+	const el = page.value?.$el;
+	if (!el || !active) return;
+	const rect = el.getBoundingClientRect();
+	const anchor = el.scrollTop >= 100 ? Array.from(el.querySelectorAll<HTMLElement>('[data-scroll-anchor]'))
+		.reverse().find(item => item.getBoundingClientRect().top <= rect.top + rect.height / 2) : undefined;
+	positions.set(key, { top: el.scrollTop, anchor: anchor?.dataset.scrollAnchor, offset: anchor ? anchor.getBoundingClientRect().top - rect.top : undefined });
+}
+
+async function restorePosition(key: FeedTab) {
+	await nextTick();
+	const el = page.value?.$el;
+	if (!el || !active || tab.value !== key) return;
+	const saved = positions.get(key);
+	el.scrollTop = saved?.top ?? 0;
+	if (saved?.anchor) {
+		const target = el.querySelector<HTMLElement>(`[data-scroll-anchor="${CSS.escape(saved.anchor)}"]`);
+		if (target) el.scrollTop += target.getBoundingClientRect().top - el.getBoundingClientRect().top - (saved.offset ?? 0);
+	}
+}
+
+watch(tab, (next, previous) => {
+	savePosition(previous);
+	restorePosition(next);
+});
+// Capture before RouterView detaches the page; detached virtualized notes have no useful geometry.
+router.useListener('change', ({ resolved }) => {
+	if (resolved.route.path !== '/feed') savePosition(tab.value);
+});
+onDeactivated(() => { active = false; });
+onActivated(() => {
+	active = true;
+	restorePosition(tab.value);
+});
+
+watch(router.currentRef, current => {
+	// Cached pages must ignore navigation elsewhere. The hash is deliberately not a route prop.
+	if (current.route.path !== '/feed') return;
+	const hash = current._parsedRoute.hash;
+	tab.value = !$i ? 'users' : hash === 'users' || hash === 'explore' ? hash : 'following';
 }, { immediate: true });
-const withRenotes = computed<boolean>({
-	get: () => store.r.tl.value.filter.withRenotes,
-	set: (x) => saveTlFilter('withRenotes', x),
-});
 
-const withReplies = computed(() => store.r.tl.value.filter.withReplies);
-const onlyFiles = computed<boolean>({
-	get: () => store.r.tl.value.filter.onlyFiles,
-	set: (x) => saveTlFilter('onlyFiles', x),
-});
-
-const withSensitive = computed<boolean>({
-	get: () => store.r.tl.value.filter.withSensitive,
-	set: (x) => saveTlFilter('withSensitive', x),
-});
-
-const showFixedPostForm = prefer.model('showFixedPostForm');
-
-function saveTlFilter(key: keyof typeof store.s.tl.filter, newValue: boolean) {
-	if (key !== 'withReplies' || $i) {
-		const out = deepMerge({ filter: { [key]: newValue } }, store.s.tl);
-		store.set('tl', out);
-	}
+function selectTab(key: string | undefined) {
+	if (key == null || key === tab.value || !headerTabs.value.some(item => item.key === key)) return;
+	router.pushByPath(`/feed#${key}`);
 }
 
-const headerActions = computed<PageHeaderItem[]>(() => {
-	const items: PageHeaderItem[] = [{
-		icon: 'ti ti-dots',
-		text: i18n.ts.options,
-		handler: (ev) => {
-			const menuItems: MenuItem[] = [];
-
-			menuItems.push({
-				type: 'switch',
-				icon: 'ti ti-repeat',
-				text: i18n.ts.showRenotes,
-				ref: withRenotes,
-			});
-
-			if (isBasicTimeline(src) && hasWithReplies(src)) {
-				menuItems.push({
-					type: 'switch',
-					icon: 'ti ti-messages',
-					text: i18n.ts.showRepliesToOthersInTimeline,
-					ref: withReplies,
-					disabled: onlyFiles,
-				});
-			}
-
-			menuItems.push({
-				type: 'switch',
-				icon: 'ti ti-eye-exclamation',
-				text: i18n.ts.withSensitive,
-				ref: withSensitive,
-			}, {
-				type: 'switch',
-				icon: 'ti ti-photo',
-				text: i18n.ts.fileAttachedOnly,
-				ref: onlyFiles,
-				disabled: isBasicTimeline(src) && hasWithReplies(src) ? withReplies : false,
-			}, {
-				type: 'divider',
-			}, {
-				type: 'switch',
-				text: i18n.ts.showFixedPostForm,
-				ref: showFixedPostForm,
-			});
-
-			os.popupMenu(menuItems, ev.currentTarget ?? ev.target);
-		},
-	}];
-
-	if (deviceKind === 'desktop') {
-		items.unshift({
-			icon: 'ti ti-refresh',
-			text: i18n.ts.reload,
-			handler: () => {
-				tlComponent.value?.reloadTimeline();
-			},
-		});
-	}
-
-	return items;
-});
-
-const headerTabs = computed<Tab[]>(() => [{
-	key: 'home',
-	title: i18n.ts.following,
-	icon: basicTimelineIconClass('home'),
-}, {
-	key: 'explore',
-	title: i18n.ts.explore,
-	icon: 'ti ti-hash',
-}]);
-
-definePage(() => ({
-	title: i18n.ts.following,
-	icon: isBasicTimeline(src) ? basicTimelineIconClass(src) : 'ti ti-home',
-}));
+const metadata = { title: i18n.ts.timeline, icon: 'ti ti-home' };
+definePage(() => metadata);
 </script>
-
-<style lang="scss" module>
-.new {
-	position: sticky;
-	top: calc(var(--MI-stickyTop, 0px) + 16px);
-	z-index: 1000;
-	width: 100%;
-	margin: calc(-0.675em - 8px) 0;
-
-	&:first-child {
-		margin-top: calc(-0.675em - 8px - var(--MI-margin));
-	}
-}
-
-.newButton {
-	display: block;
-	margin: var(--MI-margin) auto 0 auto;
-	padding: 8px 16px;
-	border-radius: 32px;
-}
-
-.postForm {
-	border-radius: var(--MI-radius);
-}
-
-.tl {
-	background: var(--MI_THEME-bg);
-	border-radius: var(--MI-radius);
-	overflow: clip;
-}
-</style>

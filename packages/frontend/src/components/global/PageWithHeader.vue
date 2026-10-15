@@ -39,25 +39,28 @@ import MkTabs from '@/components/MkTabs.vue';
 const props = withDefaults(defineProps<PageHeaderProps & {
 	reversed?: boolean;
 	swipable?: boolean;
+	retainScroll?: boolean;
 }>(), {
 	reversed: false,
 	swipable: true,
+	retainScroll: true,
 });
 
 const pageHeaderProps = computed(() => {
-	const { reversed, tab, ...rest } = props;
+	const { reversed, tab, retainScroll, ...rest } = props;
 	return rest;
 });
 
 const pageHeaderPropsWithoutTabs = computed(() => {
-	const { reversed, tabs, ...rest } = props;
+	const { reversed, tabs, retainScroll, ...rest } = props;
 	return rest;
 });
 
 const tab = defineModel<string>('tab');
 const rootEl = useTemplateRef('rootEl');
 
-useScrollPositionKeeper(rootEl);
+// Pages with per-tab scroll state own restoration across activation as well.
+if (props.retainScroll) useScrollPositionKeeper(rootEl);
 
 const router = useRouter();
 

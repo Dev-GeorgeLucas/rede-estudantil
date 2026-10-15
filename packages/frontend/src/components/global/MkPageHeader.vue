@@ -54,6 +54,7 @@ export type PageHeaderProps = {
 	hideTitle?: boolean;
 	canOmitTitle?: boolean;
 	displayMyAvatar?: boolean;
+	preserveTabScroll?: boolean;
 };
 </script>
 
@@ -109,7 +110,7 @@ async function openAccountMenu(ev: PointerEvent) {
 }
 
 function onTabClick(): void {
-	top();
+	if (!props.preserveTabScroll) top();
 }
 
 let ro: ResizeObserver | null;

@@ -11,7 +11,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 		</div>
 	</button>
 
-	<button :class="$style.item" class="_button" @click="mainRouter.push('/')">
+	<button v-tooltip="i18n.ts.timeline" :class="[$style.item, { [$style.active]: isFeed }]" class="_button" :aria-label="i18n.ts.timeline" :aria-current="isFeed ? 'page' : undefined" @click="mainRouter.push('/feed')">
 		<div :class="$style.itemInner">
 			<i :class="$style.itemIcon" class="ti ti-home"></i>
 		</div>
@@ -45,12 +45,14 @@ import { computed, ref, useTemplateRef, watch } from 'vue';
 import { $i } from '@/i.js';
 import * as os from '@/os.js';
 import { mainRouter } from '@/router.js';
+import { i18n } from '@/i18n.js';
 import { navbarItemDef } from '@/navbar.js';
 
 const drawerMenuShowing = defineModel<boolean>('drawerMenuShowing');
 const widgetsShowing = defineModel<boolean>('widgetsShowing');
 
 const rootEl = useTemplateRef('rootEl');
+const isFeed = computed(() => mainRouter.currentRoute.value.path === '/feed');
 
 const menuIndicated = computed(() => {
 	for (const def in navbarItemDef) {
@@ -87,6 +89,10 @@ watch(rootEl, () => {
 	background: var(--MI_THEME-navBg);
 	color: var(--MI_THEME-navFg);
 	border-top: solid 0.5px var(--MI_THEME-divider);
+}
+
+.active {
+	color: var(--MI_THEME-accent);
 }
 
 .item {

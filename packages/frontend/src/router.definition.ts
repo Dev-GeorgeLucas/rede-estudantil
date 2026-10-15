@@ -29,11 +29,15 @@ function advancedPage(loader: AsyncComponentLoader) {
 export const ROUTE_DEF = [{
 	name: 'index',
 	path: '/',
-	component: $i ? PageTimeline : page(() => import('@/pages/welcome.vue')),
+	...($i ? { redirect: '/feed' } : { component: page(() => import('@/pages/welcome.vue')) }),
+}, {
+	path: '/feed',
+	name: $i ? 'index' : 'feed',
+	component: PageTimeline,
+	cacheKey: 'feed',
 }, {
 	path: '/timeline',
-	component: $i ? PageTimeline : page(() => import('@/pages/explore.vue')),
-	loginRequired: true,
+	redirect: '/feed',
 }, {
 	path: '/@:username/pages/:pageName(*)',
 	component: page(() => import('@/pages/page.vue')),
@@ -246,8 +250,7 @@ export const ROUTE_DEF = [{
 	component: page(() => import('@/pages/user-tag.vue')),
 }, {
 	path: '/explore',
-	component: page(() => import('@/pages/explore.vue')),
-	loginRequired: true,
+	redirect: props => props.get('initialTab') === 'users' ? '/feed#users' : '/feed#explore',
 	hash: 'initialTab',
 }, {
 	path: '/search',
