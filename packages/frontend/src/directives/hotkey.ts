@@ -12,7 +12,11 @@ const abortControllers = new WeakMap<HTMLElement, AbortController>();
 export const hotkeyDirective = {
 	mounted(el, binding) {
 		const isGlobal = (binding.modifiers.global === true);
-		const keyHandler = makeHotkey(binding.value);
+		const handler = makeHotkey(binding.value);
+		const keyHandler = (event: KeyboardEvent) => {
+			if (binding.modifiers.self && event.target !== el) return;
+			handler(event);
+		};
 		const abortController = new AbortController();
 
 		if (isGlobal) {

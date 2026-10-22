@@ -11,7 +11,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 	:enterFromClass="$style.transition_x_enterFrom"
 	:leaveToClass="$style.transition_x_leaveTo"
 	:moveClass="$style.transition_x_move"
-	tag="div" :class="$style.root"
+	tag="div" :class="[$style.root, { [$style.compact]: compact }]"
 >
 	<XReaction
 		v-for="[reaction, count] in _reactions"
@@ -39,6 +39,7 @@ import { $i } from '@/i.js';
 import { prefer } from '@/preferences.js';
 import { customEmojisMap } from '@/custom-emojis.js';
 import { DI } from '@/di.js';
+import { isHeartReaction } from '@/utility/note-heart.js';
 
 const props = withDefaults(defineProps<{
 	noteId: Misskey.entities.Note['id'];
@@ -46,6 +47,8 @@ const props = withDefaults(defineProps<{
 	reactionEmojis: Misskey.entities.Note['reactionEmojis'];
 	myReaction: Misskey.entities.Note['myReaction'];
 	maxNumber?: number;
+	hideHeart?: boolean;
+	compact?: boolean;
 }>(), {
 	maxNumber: Infinity,
 });
@@ -61,7 +64,7 @@ const initialReactions = new Set(Object.keys(props.reactions));
 const _reactions = ref<[string, number][]>([]);
 const hasMoreReactions = ref(false);
 
-if (props.myReaction != null && !(props.myReaction in props.reactions)) {
+if (props.myReaction != null && !(props.myReaction in props.reactions) && !(props.hideHeart && isHeartReaction(props.myReaction))) {
 	_reactions.value.push([props.myReaction, props.reactions[props.myReaction]]);
 }
 
@@ -119,7 +122,7 @@ watch([() => props.reactions, () => props.maxNumber], ([newSource, maxNumber]) =
 
 	newReactions = newReactions.slice(0, props.maxNumber);
 
-	if (props.myReaction && !newReactions.some(([x]) => x === props.myReaction)) {
+	if (props.myReaction && !newReactions.some(([x]) => x === props.myReaction) && !(props.hideHeart && isHeartReaction(props.myReaction))) {
 		newReactions.push([props.myReaction, newSource[props.myReaction]]);
 	}
 
@@ -151,5 +154,11 @@ watch([() => props.reactions, () => props.maxNumber], ([newSource, maxNumber]) =
 	&:empty {
 		display: none;
 	}
+}
+
+.compact :deep(button) {
+	font-size: 1em;
+	min-width: 44px;
+	min-height: 44px;
 }
 </style>

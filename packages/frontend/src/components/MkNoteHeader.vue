@@ -20,7 +20,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 		<div v-if="mock">
 			<MkTime :time="note.createdAt" colored/>
 		</div>
-		<MkA v-else :to="notePage(note)">
+		<MkA v-else :to="notePage(note)" :aria-label="i18n.ts.details">
 			<MkTime :time="note.createdAt" colored/>
 		</MkA>
 		<span v-if="note.visibility !== 'public'" style="margin-left: 0.5em;" :title="i18n.ts._visibility[note.visibility]">
@@ -54,9 +54,12 @@ const mock = inject(DI.mock, false);
 	display: flex;
 	align-items: baseline;
 	white-space: nowrap;
+	flex-wrap: wrap;
+	column-gap: 4px;
 }
 
 .name {
+	max-width: 100%;
 	flex-shrink: 1;
 	display: block;
 	margin: 0 .5em 0 0;
@@ -83,6 +86,8 @@ const mock = inject(DI.mock, false);
 }
 
 .username {
+	min-width: 0;
+	color: var(--MI_THEME-fgTransparentWeak);
 	flex-shrink: 9999999;
 	margin: 0 .5em 0 0;
 	overflow: hidden;
@@ -91,7 +96,7 @@ const mock = inject(DI.mock, false);
 
 .info {
 	flex-shrink: 0;
-	margin-left: auto;
+	color: var(--MI_THEME-fgTransparentWeak);
 	font-size: 0.9em;
 }
 

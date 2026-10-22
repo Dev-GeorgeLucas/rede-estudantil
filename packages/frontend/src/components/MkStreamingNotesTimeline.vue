@@ -10,7 +10,9 @@ SPDX-License-Identifier: AGPL-3.0-only
 	<MkError v-else-if="paginator.error.value" @retry="paginator.init()"/>
 
 	<div v-else-if="paginator.items.value.length === 0" key="_empty_">
-		<slot name="empty"><MkResult type="empty" :text="i18n.ts.noNotes"/></slot>
+		<MkLoading v-if="paginator.fetchingOlder.value || paginator.fetchingNewer.value"/>
+		<MkButton v-else-if="paginator.autoFetchPaused?.value && paginator.canFetchOlder.value" :disabled="paginator.fetchingOlder.value" @click="paginator.fetchOlder()">{{ i18n.ts.loadMore }}</MkButton>
+		<slot v-else name="empty"><MkResult type="empty" :text="i18n.ts.noNotes"/></slot>
 	</div>
 
 	<div v-else ref="rootEl">
@@ -47,7 +49,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 				<MkNote v-else :class="$style.note" :note="note" :withHardMute="true" :data-scroll-anchor="note.id"/>
 			</template>
 		</component>
-		<button v-show="paginator.canFetchOlder.value" key="_more_" v-appear="prefer.s.enableInfiniteScroll ? paginator.fetchOlder : null" :disabled="paginator.fetchingOlder.value" class="_button" :class="$style.more" @click="paginator.fetchOlder">
+		<button v-show="paginator.canFetchOlder.value" key="_more_" v-appear="prefer.s.enableInfiniteScroll ? fetchOlderAutomatically : null" :disabled="paginator.fetchingOlder.value" class="_button" :class="$style.more" @click="paginator.fetchOlder">
 			<div v-if="!paginator.fetchingOlder.value">{{ i18n.ts.loadMore }}</div>
 			<MkLoading v-else :inline="true"/>
 		</button>
@@ -56,7 +58,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 </template>
 
 <script lang="ts" setup>
-import { computed, watch, onUnmounted, provide, useTemplateRef, TransitionGroup, onMounted, shallowRef, ref, markRaw } from 'vue';
+import { computed, watch, onUnmounted, provide, useTemplateRef, TransitionGroup, onMounted, onActivated, shallowRef, ref, markRaw } from 'vue';
 import * as Misskey from 'misskey-js';
 import { useInterval } from '@@/js/use-interval.js';
 import { useDocumentVisibility } from '@@/js/use-document-visibility.js';
@@ -79,6 +81,7 @@ import { DI } from '@/di.js';
 import { globalEvents, useGlobalEvent } from '@/events.js';
 import { isSeparatorNeeded, getSeparatorInfo } from '@/utility/timeline-date-separate.js';
 import { Paginator } from '@/utility/paginator.js';
+import { isFeedNote } from '@/utility/feed-notes.js';
 
 const props = withDefaults(defineProps<{
 	src: BasicTimelineType | 'mentions' | 'directs' | 'list' | 'antenna' | 'channel' | 'role';
@@ -92,6 +95,7 @@ const props = withDefaults(defineProps<{
 	withReplies?: boolean;
 	withSensitive?: boolean;
 	onlyFiles?: boolean;
+	feedOnly?: boolean;
 }>(), {
 	withRenotes: true,
 	withReplies: false,
@@ -118,6 +122,7 @@ if (timelineSource === 'antenna') {
 	}));
 } else if (timelineSource === 'home') {
 	paginator = markRaw(new Paginator('notes/timeline', {
+		itemFilter: props.feedOnly ? isFeedNote : undefined,
 		computedParams: computed(() => ({
 			withRenotes: props.withRenotes,
 			withFiles: props.onlyFiles ? true : undefined,
@@ -187,6 +192,8 @@ if (timelineSource === 'antenna') {
 } else {
 	throw new Error('Unrecognized timeline type: ' + timelineSource);
 }
+
+onActivated(() => paginator.filterCachedItems?.());
 
 onMounted(() => {
 	paginator.init();
@@ -285,7 +292,12 @@ function releaseQueue() {
 	scrollToTop(rootEl.value!);
 }
 
+function fetchOlderAutomatically() {
+	if (!paginator.autoFetchPaused?.value) paginator.fetchOlder();
+}
+
 function prepend(note: Misskey.entities.Note & MisskeyEntity) {
+	if (props.feedOnly && !isFeedNote(note)) return;
 	adInsertionCounter++;
 
 	if (instance.notesPerOneAd > 0 && adInsertionCounter % instance.notesPerOneAd === 0) {

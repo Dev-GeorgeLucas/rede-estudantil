@@ -14,6 +14,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 		:key="src + withRenotes + withReplies + onlyFiles + withSensitive"
 		:class="$style.tl"
 		:src="src"
+		feedOnly
 		:withRenotes="withRenotes"
 		:withReplies="withReplies"
 		:withSensitive="withSensitive"

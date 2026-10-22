@@ -14,9 +14,10 @@ import { markRaw, onActivated, onDeactivated, onBeforeUnmount } from 'vue';
 import MkNotesTimeline from '@/components/MkNotesTimeline.vue';
 import { useStream } from '@/stream.js';
 import { Paginator } from '@/utility/paginator.js';
+import { isFeedNote } from '@/utility/feed-notes.js';
 import { i18n } from '@/i18n.js';
 
-const paginator = markRaw(new Paginator('notes/discovery', { limit: 10 }));
+const paginator = markRaw(new Paginator('notes/discovery', { limit: 10, itemFilter: isFeedNote }));
 let active = true;
 let needsReload = false;
 
@@ -31,6 +32,7 @@ connection.on('unfollow', onFollowingChange);
 onBeforeUnmount(() => connection.dispose());
 onDeactivated(() => { active = false; });
 onActivated(() => {
+	paginator.filterCachedItems();
 	active = true;
 	if (needsReload) {
 		needsReload = false;

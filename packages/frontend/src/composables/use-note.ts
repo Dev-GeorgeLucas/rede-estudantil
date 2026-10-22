@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import type { Ref } from 'vue';
 import * as mfm from 'mfm-js';
 import * as Misskey from 'misskey-js';
@@ -34,6 +34,7 @@ import MkUsersTooltip from '@/components/MkUsersTooltip.vue';
 import MkReactionsViewerDetails from '@/components/MkReactionsViewer.details.vue';
 import MkRippleEffect from '@/components/MkRippleEffect.vue';
 import { notePage } from '@/filters/note.js';
+import { HEART_REACTION, heartCount, isHeartReaction, toggleNoteHeart, toggleNoteReaction } from '@/utility/note-heart.js';
 import type { DI as DIType } from '@/di.js';
 import type { ExtractInjectedType } from '@/types/misc.js';
 import type { MenuItem } from '@/types/menu.js';
@@ -52,6 +53,7 @@ export interface UseNoteElements {
 	renoteButton?: Ref<HTMLElement | null>;
 	renoteTime?: Ref<HTMLElement | null>;
 	reactButton?: Ref<HTMLElement | null>;
+	likeButton?: Ref<HTMLElement | null>;
 	clipButton?: Ref<HTMLElement | null>;
 }
 
@@ -197,20 +199,21 @@ export function useNote(
 			});
 		}
 
-		if (appearNote.reactionAcceptance === 'likeOnly' && els.reactButton != null) {
-			useTooltip(els.reactButton, async (showing) => {
+		if (els.likeButton != null) {
+			useTooltip(els.likeButton, async (showing) => {
 				const reactions = await misskeyApi('notes/reactions', {
 					noteId: appearNote.id,
+					type: HEART_REACTION,
 					limit: 10,
 				});
 				const users = reactions.map(x => x.user);
-				if (users.length < 1 || els.reactButton!.value == null) return;
+				if (users.length < 1 || els.likeButton!.value == null) return;
 				const { dispose } = os.popup(MkReactionsViewerDetails, {
 					showing,
 					reaction: '❤️',
 					users,
-					count: $appearNote.reactionCount,
-					anchorElement: els.reactButton!.value,
+					count: heartCount($appearNote.reactions),
+					anchorElement: els.likeButton!.value,
 				}, {
 					closed: () => dispose(),
 				});
@@ -219,6 +222,34 @@ export function useNote(
 	}
 
 	// 共通アクション関数群
+	const liking = ref(false);
+	const liked = computed(() => isHeartReaction($appearNote.myReaction));
+	const likes = computed(() => heartCount($appearNote.reactions));
+	const otherReactions = computed(() => Object.fromEntries(Object.entries($appearNote.reactions).filter(([reaction]) => !isHeartReaction(reaction))));
+
+	async function toggleLike() {
+		if (props.mock || liking.value || appearNote.isHidden) return;
+		liking.value = true;
+		try {
+			if (!await pleaseLogin({ openOnRemote: pleaseLoginContext })) return;
+			showMovedDialog();
+			await toggleNoteHeart(appearNote.id, {
+				current: () => $appearNote.myReaction,
+				confirm: async () => !(await os.confirm({ type: 'warning', text: i18n.ts.changeReactionConfirm })).canceled,
+				create: () => misskeyApi('notes/reactions/create', { noteId: appearNote.id, reaction: HEART_REACTION }),
+				remove: () => misskeyApi('notes/reactions/delete', { noteId: appearNote.id }),
+				reconcile: async () => {
+					const fresh = await misskeyApi('notes/show', { noteId: appearNote.id });
+					noteEvents.emit(`reconciled:${appearNote.id}`, fresh);
+				},
+			});
+		} catch {
+			await os.alert({ type: 'error', text: i18n.ts.somethingHappened });
+		} finally {
+			liking.value = false;
+		}
+	}
+
 	async function renote() {
 		if (props.mock) return;
 		const isLoggedIn = await pleaseLogin({ openOnRemote: pleaseLoginContext });
@@ -272,24 +303,24 @@ export function useNote(
 		} else {
 			blur();
 			reactionPicker.show(els.reactButton?.value ?? null, rawNote, async (reaction) => {
-				if (prefer.s.confirmOnReact) {
-					const confirm = await os.confirm({
-						type: 'question',
-						text: i18n.tsx.reactAreYouSure({ emoji: reaction.replace('@.', '') }),
-					});
-					if (confirm.canceled) return;
-				}
-				sound.playMisskeySfx('reaction');
 				if (props.mock) {
-					if (createReactionMock) createReactionMock(reaction);
+					createReactionMock?.(reaction);
 					return;
 				}
-				misskeyApi('notes/reactions/create', {
-					noteId: appearNote.id,
-					reaction: reaction,
-				}).then(() => {
-					noteEvents.emit(`reacted:${appearNote.id}`, { userId: $i!.id, reaction: reaction });
-				});
+				try {
+					if (!$appearNote.myReaction && prefer.s.confirmOnReact && (await os.confirm({ type: 'question', text: i18n.tsx.reactAreYouSure({ emoji: reaction.replace('@.', '') }) })).canceled) return;
+					await toggleNoteReaction(appearNote.id, {
+						current: () => $appearNote.myReaction,
+						confirm: async () => !(await os.confirm({ type: 'warning', text: i18n.ts.changeReactionConfirm })).canceled,
+						create: () => misskeyApi('notes/reactions/create', { noteId: appearNote.id, reaction }),
+						remove: () => misskeyApi('notes/reactions/delete', { noteId: appearNote.id }),
+						reconcile: async () => {
+							noteEvents.emit(`reconciled:${appearNote.id}`, await misskeyApi('notes/show', { noteId: appearNote.id }));
+						},
+					}, reaction);
+				} catch {
+					await os.alert({ type: 'error', text: i18n.ts.somethingHappened });
+				}
 				if (appearNote.text && appearNote.text.length > 100 && (Date.now() - new Date(appearNote.createdAt).getTime() < 1000 * 3)) {
 					claimAchievement('reactWithoutRead');
 				}
@@ -427,6 +458,11 @@ export function useNote(
 	function blur() { els.rootEl?.value?.blur(); }
 
 	return {
+		toggleLike,
+		liking,
+		liked,
+		likes,
+		otherReactions,
 		// 状態・データ
 		note: rawNote,
 		appearNote,

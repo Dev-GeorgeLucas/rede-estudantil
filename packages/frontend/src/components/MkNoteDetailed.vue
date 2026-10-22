@@ -7,17 +7,17 @@ SPDX-License-Identifier: AGPL-3.0-only
 <div
 	v-if="!muted && !hideByPlugin && !isDeleted"
 	ref="rootEl"
-	v-hotkey="keymap"
+	v-hotkey.self="keymap"
 	:class="$style.root"
 	tabindex="0"
 >
-	<div v-if="appearNote.reply && appearNote.reply.replyId">
+	<div v-if="replyContextNote?.replyId">
 		<div v-if="!conversationLoaded" style="padding: 16px">
 			<MkButton style="margin: 0 auto;" primary rounded @click="loadConversation">{{ i18n.ts.loadConversation }}</MkButton>
 		</div>
-		<MkNoteSub v-for="note in conversation" :key="note.id" :class="$style.replyToMore" :note="note"/>
+		<MkNoteSub v-for="note in conversation" :key="note.id" :class="$style.replyToMore" :note="null" :contextId="note.id"/>
 	</div>
-	<MkNoteSub v-if="appearNote.replyId" :note="appearNote?.reply ?? null" :class="$style.replyTo"/>
+	<MkNoteSub v-if="appearNote.replyId" :note="null" :contextId="appearNote.replyId" :class="$style.replyTo" @contextUpdated="updateReplyContext"/>
 	<div v-if="isRenote" :class="$style.renote">
 		<MkAvatar :class="$style.renoteAvatar" :user="note.user" link preview/>
 		<i class="ti ti-repeat" style="margin-right: 4px;"></i>
@@ -90,7 +90,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 				</p>
 				<div v-show="appearNote.cw == null || showContent">
 					<span v-if="appearNote.isHidden" style="opacity: 0.5">({{ i18n.ts.private }})</span>
-					<MkA v-if="appearNote.replyId" :class="$style.noteReplyTarget" :to="`/notes/${appearNote.replyId}`"><i class="ti ti-arrow-back-up"></i></MkA>
+					<MkA v-if="appearNote.replyId && replyContextNote" :class="$style.noteReplyTarget" :to="`/notes/${appearNote.replyId}`"><i class="ti ti-arrow-back-up"></i></MkA>
 					<Mfm
 						v-if="appearNote.text"
 						:parsedNodes="parsed"
@@ -111,10 +111,10 @@ SPDX-License-Identifier: AGPL-3.0-only
 						</div>
 					</div>
 					<div v-if="appearNote.files && appearNote.files.length > 0">
-						<MkMediaList ref="galleryEl" :mediaList="appearNote.files" :user="appearNote.user"/>
+						<MkMediaList ref="galleryEl" data-note-interactive :mediaList="appearNote.files" :user="appearNote.user"/>
 					</div>
-					<MkPoll
-						v-if="appearNote.poll"
+					<MkPoll v-if="appearNote.poll"
+						data-note-interactive
 						:noteId="appearNote.id"
 						:multiple="appearNote.poll.multiple"
 						:expiresAt="appearNote.poll.expiresAt"
@@ -124,9 +124,9 @@ SPDX-License-Identifier: AGPL-3.0-only
 						:class="$style.poll"
 					/>
 					<div v-if="isEnabledUrlPreview">
-						<MkUrlPreview v-for="url in urls" :key="url" :url="url" :compact="true" :detail="true" style="margin-top: 6px;"/>
+						<MkUrlPreview v-for="url in urls" :key="url" data-note-interactive :url="url" :compact="true" :detail="true" style="margin-top: 6px;"/>
 					</div>
-					<div v-if="appearNote.renoteId" :class="$style.quote"><MkNoteSimple :note="appearNote?.renote ?? null" :class="$style.quoteNote"/></div>
+					<div v-if="appearNote.renoteId" :class="$style.quote"><MkNoteSimple data-note-interactive :note="appearNote?.renote ?? null" :class="$style.quoteNote"/></div>
 				</div>
 				<MkA v-if="appearNote.channel && !inChannel" :class="$style.channel" :to="`/channels/${appearNote.channel.id}`"><i class="ti ti-device-tv"></i> {{ appearNote.channel.name }}</MkA>
 			</div>
@@ -147,21 +147,23 @@ SPDX-License-Identifier: AGPL-3.0-only
 				<MkReactionsViewer
 					v-if="appearNote.reactionAcceptance !== 'likeOnly'"
 					style="margin-top: 6px;"
-					:reactions="$appearNote.reactions"
+					:reactions="otherReactions"
 					:reactionEmojis="$appearNote.reactionEmojis"
 					:myReaction="$appearNote.myReaction"
+					hideHeart
+					compact
 					:noteId="appearNote.id"
 				/>
-				<button class="_button" :class="$style.noteFooterButton" @click="reply()">
+				<button v-tooltip="i18n.ts.reply" class="_button" :class="$style.noteFooterButton" :aria-label="i18n.ts.reply" @click="reply()">
 					<i class="ti ti-arrow-back-up"></i>
-					<p v-if="appearNote.repliesCount > 0" :class="$style.noteFooterButtonCount">{{ number(appearNote.repliesCount) }}</p>
+					<p v-if="$appearNote.repliesCount > 0" :class="$style.noteFooterButtonCount">{{ number($appearNote.repliesCount) }}</p>
 				</button>
 				<button
 					v-if="canRenote"
 					ref="renoteButton"
+					v-tooltip="i18n.ts.renote"
 					class="_button"
-					:class="$style.noteFooterButton"
-					@mousedown.prevent="renote()"
+					:class="$style.noteFooterButton" :aria-label="i18n.ts.renote" @click="renote()"
 				>
 					<i class="ti ti-repeat"></i>
 					<p v-if="appearNote.renoteCount > 0" :class="$style.noteFooterButtonCount">{{ number(appearNote.renoteCount) }}</p>
@@ -169,21 +171,22 @@ SPDX-License-Identifier: AGPL-3.0-only
 				<button v-else class="_button" :class="$style.noteFooterButton" disabled>
 					<i class="ti ti-ban"></i>
 				</button>
-				<button ref="reactButton" :class="$style.noteFooterButton" class="_button" @click="toggleReact()">
-					<i v-if="appearNote.reactionAcceptance === 'likeOnly' && $appearNote.myReaction != null" class="ti ti-heart-filled" style="color: var(--MI_THEME-love);"></i>
-					<i v-else-if="$appearNote.myReaction != null" class="ti ti-minus" style="color: var(--MI_THEME-accent);"></i>
-					<i v-else-if="appearNote.reactionAcceptance === 'likeOnly'" class="ti ti-heart"></i>
-					<i v-else class="ti ti-plus"></i>
-					<p v-if="(appearNote.reactionAcceptance === 'likeOnly' || prefer.s.showReactionsCount) && $appearNote.reactionCount > 0" :class="$style.noteFooterButtonCount">{{ number($appearNote.reactionCount) }}</p>
+				<button ref="likeButton" v-tooltip="liked ? i18n.ts.unlike : i18n.ts.like" :aria-label="liked ? i18n.ts.unlike : i18n.ts.like" :aria-pressed="liked" :disabled="liking || appearNote.isHidden" :class="$style.noteFooterButton" class="_button" @click="toggleLike()">
+					<i :class="liked ? 'ti ti-heart-filled' : 'ti ti-heart'" :style="liked ? { color: 'var(--MI_THEME-love)' } : undefined" aria-hidden="true"></i>
+					<span v-if="likes" :class="$style.noteFooterButtonCount">{{ number(likes) }}</span>
 				</button>
-				<button v-if="prefer.s.showClipButtonInNoteFooter" ref="clipButton" class="_button" :class="$style.noteFooterButton" @mousedown.prevent="clip()">
+				<button v-if="appearNote.reactionAcceptance !== 'likeOnly'" ref="reactButton" v-tooltip="i18n.ts.reactions" :aria-label="i18n.ts.reactions" :class="$style.noteFooterButton" class="_button" @click="react()">
+					<i class="ti ti-mood-plus" aria-hidden="true"></i>
+				</button>
+				<button v-if="prefer.s.showClipButtonInNoteFooter" ref="clipButton" class="_button" :class="$style.noteFooterButton" @click="clip()">
 					<i class="ti ti-paperclip"></i>
 				</button>
-				<button ref="menuButton" class="_button" :class="$style.noteFooterButton" @mousedown.prevent="showMenu()">
+				<button ref="menuButton" v-tooltip="i18n.ts.more" class="_button" :class="$style.noteFooterButton" :aria-label="i18n.ts.more" @click="showMenu()">
 					<i class="ti ti-dots"></i>
 				</button>
 			</footer>
 		</article>
+		<MkPostForm v-if="$i && !appearNote.isHidden" :reply="appearNote" :channel="appearNote.channel" :autofocus="false" fixed conversation :class="$style.replyComposer"/>
 		<div :class="$style.tabs">
 			<button class="_button" :class="[$style.tab, { [$style.tabActive]: tab === 'replies' }]" @click="tab = 'replies'"><i class="ti ti-arrow-back-up"></i> {{ i18n.ts.replies }}</button>
 			<button class="_button" :class="[$style.tab, { [$style.tabActive]: tab === 'renotes' }]" @click="tab = 'renotes'"><i class="ti ti-repeat"></i> {{ i18n.ts.renotes }}</button>
@@ -191,10 +194,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 		</div>
 		<div>
 			<div v-if="tab === 'replies'">
-				<div v-if="!repliesLoaded" style="padding: 16px">
-					<MkButton style="margin: 0 auto;" primary rounded @click="loadReplies">{{ i18n.ts.loadReplies }}</MkButton>
-				</div>
-				<MkNoteSub v-for="note in replies" :key="note.id" :note="note" :class="$style.reply" :detail="true"/>
+				<MkNotesTimeline :paginator="repliesPaginator" :withControl="false" :pullToRefresh="false" :forceDisableInfiniteScroll="true" noGap/>
 			</div>
 			<div v-else-if="tab === 'renotes'" :class="$style.tab_renotes">
 				<MkPagination :paginator="renotesPaginator" :forceDisableInfiniteScroll="true">
@@ -227,6 +227,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 		</div>
 	</template>
 </div>
+<MkResult v-else-if="isDeleted" type="empty" :text="i18n.ts.deletedNote"/>
 <div v-else-if="muted" class="_panel" :class="$style.muted" @click="muted = false">
 	<I18n :src="i18n.ts.userSaysSomething" tag="small">
 		<template #name>
@@ -251,6 +252,10 @@ import { Paginator } from '@/utility/paginator.js';
 import { misskeyApi } from '@/utility/misskey-api.js';
 import number from '@/filters/number.js';
 import { DI } from '@/di.js';
+import { $i } from '@/i.js';
+import MkPostForm from '@/components/MkPostForm.vue';
+import MkNotesTimeline from '@/components/MkNotesTimeline.vue';
+import { useGlobalEvent } from '@/events.js';
 import type { Keymap } from '@/utility/hotkey.js';
 
 // コンポーネント外部の依存関係
@@ -283,11 +288,13 @@ const menuButton = useTemplateRef('menuButton');
 const renoteButton = useTemplateRef('renoteButton');
 const renoteTime = useTemplateRef('renoteTime');
 const reactButton = useTemplateRef('reactButton');
+const likeButton = useTemplateRef('likeButton');
 const clipButton = useTemplateRef('clipButton');
 const galleryEl = useTemplateRef('galleryEl');
 
 // コンポーサブルの呼び出し
 const {
+	toggleLike, liking, liked, likes, otherReactions,
 	note,
 	appearNote,
 	$appearNote,
@@ -321,12 +328,14 @@ const {
 	renoteButton,
 	renoteTime,
 	reactButton,
+	likeButton,
 	clipButton,
 }, {
 	inChannel,
 });
 
 // provide
+provide('compactNoteMentions', true);
 provide(DI.mfmEmojiReactCallback, reactViaMfmEmoji);
 
 // MkNoteDetailed固有
@@ -348,21 +357,26 @@ const reactionsPaginator = markRaw(new Paginator('notes/reactions', {
 	})),
 }));
 
-const replies = ref<Misskey.entities.Note[]>([]);
-const repliesLoaded = ref(false);
+const repliesPaginator = markRaw(new Paginator('notes/children', {
+	limit: 10,
+	params: { noteId: appearNote.id },
+}));
 
-function loadReplies() {
-	repliesLoaded.value = true;
-	misskeyApi('notes/children', {
-		noteId: appearNote.id,
-		limit: 30,
-	}).then(res => {
-		replies.value = res;
-	});
-}
+useGlobalEvent('notePosted', posted => {
+	if (posted.replyId === appearNote.id) repliesPaginator.prepend(posted);
+});
 
 const conversation = ref<Misskey.entities.Note[]>([]);
 const conversationLoaded = ref(false);
+const replyContextNote = ref<Misskey.entities.Note | null>(null);
+
+function updateReplyContext(note: Misskey.entities.Note | null) {
+	replyContextNote.value = note;
+	if (!note) {
+		conversation.value = [];
+		conversationLoaded.value = false;
+	}
+}
 
 function loadConversation() {
 	conversationLoaded.value = true;
@@ -500,8 +514,8 @@ const keymap = {
 .noteHeaderAvatar {
 	display: block;
 	flex-shrink: 0;
-	width: 58px;
-	height: 58px;
+	width: 44px;
+	height: 44px;
 }
 
 .noteHeaderBody {
@@ -597,7 +611,7 @@ const keymap = {
 
 .quoteNote {
 	padding: 16px;
-	border: dashed 1px var(--MI_THEME-renote);
+	border: solid 1px var(--MI_THEME-divider);
 	border-radius: 8px;
 	overflow: clip;
 }
@@ -619,7 +633,7 @@ const keymap = {
 	opacity: 0.7;
 
 	&:not(:last-child) {
-		margin-right: 28px;
+		margin-right: 0;
 	}
 
 	&:hover {
@@ -699,15 +713,15 @@ const keymap = {
 	}
 
 	.noteHeaderAvatar {
-		width: 50px;
-		height: 50px;
+		width: 44px;
+		height: 44px;
 	}
 }
 
 @container (max-width: 350px) {
 	.noteFooterButton {
 		&:not(:last-child) {
-			margin-right: 18px;
+			margin-right: 0;
 		}
 	}
 }
@@ -718,13 +732,13 @@ const keymap = {
 	}
 
 	.noteHeaderAvatar {
-		width: 50px;
-		height: 50px;
+		width: 44px;
+		height: 44px;
 	}
 
 	.noteFooterButton {
 		&:not(:last-child) {
-			margin-right: 12px;
+			margin-right: 0;
 		}
 	}
 }
@@ -744,4 +758,18 @@ const keymap = {
 	background-image: repeating-linear-gradient(135deg, transparent, transparent 10px, var(--color) 4px, var(--color) 14px);
 	border-radius: 8px;
 }
+
+.noteFooterButton {
+	min-width: 44px;
+	min-height: 44px;
+	border-radius: var(--MI-radius);
+	&:focus-visible { outline: 2px solid var(--MI_THEME-accent); outline-offset: -2px; }
+}
+
+.replyComposer {
+	border-top: 1px solid var(--MI_THEME-divider);
+	border-bottom: 1px solid var(--MI_THEME-divider);
+}
+.noteHeaderBody { min-width: 0; overflow-wrap: anywhere; }
+
 </style>

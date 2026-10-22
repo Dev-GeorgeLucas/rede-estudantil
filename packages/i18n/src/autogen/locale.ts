@@ -2605,6 +2605,14 @@ export interface Locale extends ILocale {
      */
     "deletedNote": string;
     /**
+     * 返信先のノートは削除されました。
+     */
+    "originalNoteDeleted": string;
+    /**
+     * 返信先のノートは利用できません。
+     */
+    "originalNoteUnavailable": string;
+    /**
      * 非公開のノート
      */
     "invisibleNote": string;
