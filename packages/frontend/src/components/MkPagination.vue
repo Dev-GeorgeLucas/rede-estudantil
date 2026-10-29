@@ -21,19 +21,22 @@ SPDX-License-Identifier: AGPL-3.0-only
 			<MkError v-else-if="paginator.error.value" @retry="paginator.init()"/>
 
 			<div v-else-if="paginator.items.value.length === 0" key="_empty_">
-				<slot name="empty"><MkResult type="empty"/></slot>
+				<MkLoading v-if="paginator.fetchingOlder.value || paginator.fetchingNewer.value"/>
+				<MkButton v-else-if="paginator.autoFetchPaused?.value && downButtonVisible" :disabled="downButtonLoading" @click="downButtonClick">{{ i18n.ts.loadMore }}</MkButton>
+				<MkButton v-else-if="paginator.autoFetchPaused?.value && upButtonVisible" :disabled="upButtonLoading" @click="upButtonClick">{{ i18n.ts.loadMore }}</MkButton>
+				<slot v-else name="empty"><MkResult type="empty"/></slot>
 			</div>
 
 			<div v-else key="_root_" class="_gaps">
 				<div v-if="direction === 'up' || direction === 'both'" v-show="upButtonVisible">
-					<MkButton v-if="!upButtonLoading" v-appear="shouldEnableInfiniteScroll ? upButtonClick : null" :class="$style.more" primary rounded @click="upButtonClick">
+					<MkButton v-if="!upButtonLoading" v-appear="shouldEnableInfiniteScroll ? autoUpButtonClick : null" :class="$style.more" primary rounded @click="upButtonClick">
 						{{ i18n.ts.loadMore }}
 					</MkButton>
 					<MkLoading v-else/>
 				</div>
 				<slot :items="getValue(paginator.items)" :fetching="paginator.fetching.value || paginator.fetchingOlder.value"></slot>
 				<div v-if="direction === 'down' || direction === 'both'" v-show="downButtonVisible">
-					<MkButton v-if="!downButtonLoading" v-appear="shouldEnableInfiniteScroll ? downButtonClick : null" :class="$style.more" primary rounded @click="downButtonClick">
+					<MkButton v-if="!downButtonLoading" v-appear="shouldEnableInfiniteScroll ? autoDownButtonClick : null" :class="$style.more" primary rounded @click="downButtonClick">
 						{{ i18n.ts.loadMore }}
 					</MkButton>
 					<MkLoading v-else/>
@@ -146,6 +149,14 @@ function downButtonClick() {
 	} else {
 		props.paginator.fetchOlder();
 	}
+}
+
+function autoUpButtonClick() {
+	if (!props.paginator.autoFetchPaused?.value) upButtonClick();
+}
+
+function autoDownButtonClick() {
+	if (!props.paginator.autoFetchPaused?.value) downButtonClick();
 }
 
 defineSlots<{

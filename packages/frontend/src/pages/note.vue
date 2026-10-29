@@ -5,7 +5,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 
 <template>
 <PageWithHeader :actions="headerActions" :tabs="headerTabs">
-	<div class="_spacer" style="--MI_SPACER-w: 800px;">
+	<div data-note-page-heading tabindex="-1" :aria-label="i18n.ts.note" class="_spacer" style="--MI_SPACER-w: 800px;">
 		<Transition :name="prefer.s.animation ? 'fade' : ''" mode="out-in">
 			<div v-if="note">
 				<div v-if="showNext" class="_margin">
@@ -45,7 +45,8 @@ SPDX-License-Identifier: AGPL-3.0-only
 </template>
 
 <script lang="ts" setup>
-import { computed, watch, ref, markRaw } from 'vue';
+import { computed, watch, ref, markRaw, onActivated, nextTick } from 'vue';
+import { mainRouter } from '@/router.js';
 import * as Misskey from 'misskey-js';
 import { host } from '@@/js/config.js';
 import MkNoteDetailed from '@/components/MkNoteDetailed.vue';
@@ -119,6 +120,8 @@ const nextChannelPaginator = markRaw(new Paginator('channels/timeline', {
 }));
 
 function fetchNote() {
+	error.value = null;
+	clips.value = undefined;
 	showPrev.value = false;
 	showNext.value = false;
 	note.value = null;
@@ -160,7 +163,19 @@ watch(() => props.noteId, fetchNote, {
 	immediate: true,
 });
 
-const headerActions = computed(() => []);
+const headerActions = computed(() => [{
+	icon: 'ti ti-arrow-left',
+	text: i18n.ts._ad.back,
+	handler: () => {
+		if (window.history.state?.noteOrigin) window.history.back();
+		else mainRouter.pushByPath('/feed', 'forcePage');
+	},
+}]);
+
+onActivated(async () => {
+	await nextTick();
+	window.document.querySelector<HTMLElement>('[data-note-page-heading]')?.focus({ preventScroll: true });
+});
 
 const headerTabs = computed(() => []);
 

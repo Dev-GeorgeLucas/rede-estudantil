@@ -5,7 +5,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 
 <template>
 <div
-	:class="[$style.root]"
+	:class="[$style.root, { [$style.conversation]: conversation }]"
 	@dragover.stop="onDragover"
 	@dragenter="onDragenter"
 	@dragleave="onDragleave"
@@ -47,7 +47,8 @@ SPDX-License-Identifier: AGPL-3.0-only
 			</button>
 		</div>
 	</header>
-	<MkNoteSimple v-if="replyTargetNote" :class="$style.targetNote" :note="replyTargetNote"/>
+	<div v-if="replyTargetNote && conversation" :class="$style.replyDestination"><MkA :to="`/notes/${replyTargetNote.id}`">{{ i18n.tsx._drafts.replyTo({ user: '@' + replyTargetNote.user.username }) }}</MkA></div>
+	<MkNoteSimple v-else-if="replyTargetNote" :class="$style.targetNote" :note="replyTargetNote"/>
 	<MkNoteSimple v-if="renoteTargetNote" :class="$style.targetNote" :note="renoteTargetNote"/>
 	<div v-if="quoteId" :class="$style.withQuote"><i class="ti ti-quote"></i> {{ i18n.ts.quoteAttached }}<button @click="quoteId = null; renoteTargetNote = null;"><i class="ti ti-x"></i></button></div>
 	<div v-if="visibility === 'specified'" :class="$style.toSpecified">
@@ -163,6 +164,7 @@ const $i = ensureSignin();
 
 const props = withDefaults(defineProps<PostFormProps & {
 	fixed?: boolean;
+	conversation?: boolean;
 	autofocus?: boolean;
 	freezeAfterPosted?: boolean;
 	mock?: boolean;
@@ -1510,6 +1512,18 @@ defineExpose({
 .root {
 	position: relative;
 	container-type: inline-size;
+}
+
+.replyDestination {
+	padding: 0 16px 8px;
+	font-size: 0.9em;
+	color: var(--MI_THEME-fgTransparentWeak);
+}
+
+.conversation {
+	.header { flex-wrap: wrap; }
+	.headerRight { flex-wrap: wrap; overflow: visible; }
+	.text { min-height: 80px; }
 }
 
 //#region header

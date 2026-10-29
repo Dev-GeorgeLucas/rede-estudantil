@@ -26,6 +26,7 @@ import { genEmbedCode } from '@/utility/get-embed-code.js';
 import { prefer } from '@/preferences.js';
 import { getPluginHandlers } from '@/plugin.js';
 import { globalEvents } from '@/events.js';
+import { mainRouter } from '@/router.js';
 
 const isInBrowserTranslationAvailable = (
 	'LanguageDetector' in window &&
@@ -299,7 +300,7 @@ export function getNoteMenu(props: {
 	}
 
 	function openDetail(): void {
-		os.pageWindow(`/notes/${appearNote.id}`);
+		mainRouter.pushByPath(`/notes/${appearNote.id}`, 'forcePage');
 	}
 
 	async function translate(): Promise<void> {

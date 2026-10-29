@@ -41,6 +41,8 @@ vi.mock('@/utility/paginator.js', async () => {
 	return { Paginator: vi.fn(class {
 		items = ref([]);
 		fetching = ref(false);
+		fetchingOlder = ref(false);
+		fetchingNewer = ref(false);
 		error = ref(null);
 		init = vi.fn();
 		reload = vi.fn(async () => {});
@@ -85,6 +87,27 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('MVP timeline fallback', () => {
+	test.each(['fetchingOlder', 'fetchingNewer'] as const)('an empty timeline shows loading while %s is active', async field => {
+		const view = render(StreamingTimeline, {
+			props: { src: 'home' },
+			global: { stubs: {
+				MkLoading: { template: '<div data-testid="loading"/>' },
+				MkResult: { template: '<div data-testid="empty"/>' },
+			} },
+		});
+		const paginator = vi.mocked(Paginator).mock.results[0].value;
+		expect(view.queryByTestId('loading')).toBeNull();
+		expect(view.getByTestId('empty')).toBeTruthy();
+		paginator[field].value = true;
+		await nextTick();
+		expect(view.getByTestId('loading')).toBeTruthy();
+		expect(view.queryByTestId('empty')).toBeNull();
+		paginator[field].value = false;
+		await nextTick();
+		expect(view.queryByTestId('loading')).toBeNull();
+		expect(view.getByTestId('empty')).toBeTruthy();
+	});
+
 	test('visitor dashboard alongside Feed never mounts a disabled public timeline or a personal fallback', () => {
 		session.visitor = true;
 		render(VisitorDashboard, { global: { stubs: { MkA: { template: '<a><slot/></a>' } } } });

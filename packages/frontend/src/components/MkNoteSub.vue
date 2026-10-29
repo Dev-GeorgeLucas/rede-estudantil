@@ -4,8 +4,17 @@ SPDX-License-Identifier: AGPL-3.0-only
 -->
 
 <template>
-<div v-if="note == null" :class="$style.deleted">
-	{{ i18n.ts.deletedNote }}
+<div v-if="context && context.state.value.status !== 'available'" :class="$style.deleted" role="status">
+	<MkLoading v-if="context.state.value.status === 'loading'" :inline="true"/>
+	<template v-else-if="context.state.value.status === 'deleted'">{{ i18n.ts.originalNoteDeleted }}</template>
+	<template v-else-if="context.state.value.status === 'unavailable'">{{ i18n.ts.originalNoteUnavailable }}</template>
+	<template v-else>
+		{{ i18n.ts.somethingHappened }}
+		<MkButton :class="$style.retry" small @click="context.refresh()">{{ i18n.ts.retry }}</MkButton>
+	</template>
+</div>
+<div v-else-if="note == null" :class="$style.deleted">
+	{{ i18n.ts.unavailable }}
 </div>
 <div v-else-if="!muted" :class="[$style.root, { [$style.children]: depth > 1 }]">
 	<div :class="$style.main">
@@ -43,7 +52,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import * as Misskey from 'misskey-js';
 import MkNoteHeader from '@/components/MkNoteHeader.vue';
 import MkSubNoteContent from '@/components/MkSubNoteContent.vue';
@@ -54,10 +63,14 @@ import { i18n } from '@/i18n.js';
 import { $i } from '@/i.js';
 import { userPage } from '@/filters/user.js';
 import { checkWordMute } from '@/utility/check-word-mute.js';
+import { useNoteContext } from '@/composables/use-note-context.js';
+import MkButton from '@/components/MkButton.vue';
 
 const props = withDefaults(defineProps<{
 	note: Misskey.entities.Note | null;
 	detail?: boolean;
+	// Verify conversation context independently of the embedded/cached snapshot.
+	contextId?: string;
 
 	// how many notes are in between this one and the note being viewed in detail
 	depth?: number;
@@ -65,7 +78,15 @@ const props = withDefaults(defineProps<{
 	depth: 1,
 });
 
+const emit = defineEmits<{
+	(ev: 'contextUpdated', note: Misskey.entities.Note | null): void;
+}>();
+const context = props.contextId ? useNoteContext(() => props.contextId!) : null;
+const note = computed(() => context ? context.state.value.note : props.note);
+if (context) watch(context.state, state => emit('contextUpdated', state.note), { immediate: true, flush: 'sync' });
+
 const muted = ref(props.note && $i ? checkWordMute(props.note, $i, $i.mutedWords) : false);
+watch(note, value => { muted.value = value && $i ? checkWordMute(value, $i, $i.mutedWords) : false; });
 
 const showContent = ref(false);
 const replies = ref<Misskey.entities.Note[]>([]);
@@ -172,5 +193,9 @@ if (props.detail && props.note) {
 	background-size: auto auto;
 	background-image: repeating-linear-gradient(135deg, transparent, transparent 10px, var(--color) 4px, var(--color) 14px);
 	border-radius: 8px;
+}
+
+.retry {
+	margin: 8px auto 0;
 }
 </style>

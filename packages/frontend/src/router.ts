@@ -25,11 +25,11 @@ window.addEventListener('popstate', (event) => {
 });
 
 mainRouter.addListener('push', ctx => {
-	window.history.pushState({ }, '', ctx.fullPath);
+	window.history.pushState(ctx.fullPath.startsWith('/notes/') ? { noteOrigin: ctx.beforeFullPath } : {}, '', ctx.fullPath);
 });
 
 mainRouter.addListener('replace', ctx => {
-	window.history.replaceState({ }, '', ctx.fullPath);
+	window.history.replaceState(ctx.fullPath.startsWith('/notes/') ? window.history.state : {}, '', ctx.fullPath);
 });
 
 mainRouter.addListener('forceReplace', ctx => {

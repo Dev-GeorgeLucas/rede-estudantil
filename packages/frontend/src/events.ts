@@ -5,7 +5,7 @@
 
 import { EventEmitter } from 'eventemitter3';
 import * as Misskey from 'misskey-js';
-import { onBeforeUnmount } from 'vue';
+import { onBeforeUnmount, shallowReactive } from 'vue';
 
 type Events = {
 	clientNotification: (notification: Misskey.entities.Notification) => void;
@@ -20,6 +20,14 @@ type Events = {
 };
 
 export const globalEvents = new EventEmitter<Events>();
+
+// Evidence from successful deletion actions / explicit server events only.
+// Session-local and bounded; a missing note or a 404 must never populate this set.
+export const deletedNoteIds = shallowReactive(new Set<string>());
+globalEvents.on('noteDeleted', id => {
+	deletedNoteIds.add(id);
+	if (deletedNoteIds.size > 500) deletedNoteIds.delete(deletedNoteIds.values().next().value!);
+});
 
 export function useGlobalEvent<T extends keyof Events>(
 	event: T,

@@ -4,8 +4,8 @@ SPDX-License-Identifier: AGPL-3.0-only
 -->
 
 <template>
-<MkA v-user-preview="canonical" :class="[$style.root, { [$style.isMe]: isMe }]" :to="url" :behavior="navigationBehavior">
-	<img :class="$style.icon" :src="avatarUrl" alt="">
+<MkA v-user-preview="canonical" :class="[$style.root, { [$style.isMe]: isMe, [$style.compact]: compact }]" :to="url" :behavior="navigationBehavior">
+	<img v-if="!compact" :class="$style.icon" :src="avatarUrl" alt="">
 	<span>
 		<span>@{{ username }}</span>
 		<span v-if="(host != localHost)" :class="$style.host">@{{ toUnicode(host) }}</span>
@@ -15,7 +15,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 
 <script lang="ts" setup>
 import { toUnicode } from 'punycode.js';
-import { computed } from 'vue';
+import { computed, inject } from 'vue';
 import { host as localHost } from '@@/js/config.js';
 import type { MkABehavior } from '@/components/global/MkA.vue';
 import { $i } from '@/i.js';
@@ -27,6 +27,8 @@ const props = defineProps<{
 	host: string;
 	navigationBehavior?: MkABehavior;
 }>();
+
+const compact = inject('compactNoteMentions', false);
 
 const canonical = props.host === localHost ? `@${props.username}` : `@${props.username}@${toUnicode(props.host)}`;
 
@@ -67,5 +69,15 @@ const avatarUrl = computed(() => prefer.s.disableShowingAnimatedImages || prefer
 
 .host {
 	opacity: 0.5;
+}
+
+.root.compact {
+	display: inline;
+	padding: 0;
+	border-radius: 0;
+	background: none;
+	overflow-wrap: anywhere;
+
+	.host { opacity: 0.8; }
 }
 </style>

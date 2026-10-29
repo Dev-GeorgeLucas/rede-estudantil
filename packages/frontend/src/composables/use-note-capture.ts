@@ -14,9 +14,10 @@ import { $i } from '@/i.js';
 import { store } from '@/store.js';
 import { misskeyApi } from '@/utility/misskey-api.js';
 import { prefer } from '@/preferences.js';
-import { globalEvents } from '@/events.js';
+import { globalEvents, useGlobalEvent } from '@/events.js';
 
 export const noteEvents = new EventEmitter<{
+	[ev: `reconciled:${string}`]: (note: Misskey.entities.Note) => void;
 	[ev: `reacted:${string}`]: (ctx: { userId: Misskey.entities.User['id']; reaction: string; emoji?: { name: string; url: string; } | null; }) => void;
 	[ev: `unreacted:${string}`]: (ctx: { userId: Misskey.entities.User['id']; reaction: string; emoji?: { name: string; url: string; } | null; }) => void;
 	[ev: `pollVoted:${string}`]: (ctx: { userId: Misskey.entities.User['id']; choice: number; }) => void;
@@ -181,6 +182,7 @@ function realtimeSubscribe(props: {
 }
 
 export type ReactiveNoteData = {
+	repliesCount: Misskey.entities.Note['repliesCount'];
 	reactions: Misskey.entities.Note['reactions'];
 	reactionCount: Misskey.entities.Note['reactionCount'];
 	reactionEmojis: Misskey.entities.Note['reactionEmojis'];
@@ -189,6 +191,14 @@ export type ReactiveNoteData = {
 };
 
 const noReaction = Symbol();
+
+function normalizeReactions(reactions: Misskey.entities.Note['reactions']) {
+	return Object.entries(reactions).reduce((acc, [name, count]) => {
+		const normalizedName = name.replace(/^:(\w+):$/, ':$1@.:');
+		acc[normalizedName] = (acc[normalizedName] ?? 0) + count;
+		return acc;
+	}, {} as Misskey.entities.Note['reactions']);
+}
 
 export function useNoteCapture(props: {
 	note: Misskey.entities.Note;
@@ -201,20 +211,22 @@ export function useNoteCapture(props: {
 	const { note, parentNote, mock } = props;
 
 	const $note = reactive<ReactiveNoteData>({
-		reactions: Object.entries(note.reactions).reduce((acc, [name, count]) => {
-			// Normalize reactions
-			const normalizedName = name.replace(/^:(\w+):$/, ':$1@.:');
-			if (acc[normalizedName] == null) {
-				acc[normalizedName] = count;
-			} else {
-				acc[normalizedName] += count;
-			}
-			return acc;
-		}, {} as Misskey.entities.Note['reactions']),
+		repliesCount: note.repliesCount,
+		reactions: normalizeReactions(note.reactions),
 		reactionCount: note.reactionCount,
 		reactionEmojis: note.reactionEmojis,
 		myReaction: note.myReaction,
 		pollChoices: note.poll?.choices ?? [],
+	});
+
+	// A locally submitted reply belongs in its conversation, not in the Feed.
+	// Keep independent rendered copies in sync without mutating their shared props.
+	const postedReplies = new Set<string>();
+	useGlobalEvent('notePosted', posted => {
+		if (posted.replyId !== note.id || postedReplies.has(posted.id)) return;
+		postedReplies.add(posted.id);
+		if (postedReplies.size > 100) postedReplies.delete(postedReplies.values().next().value!);
+		$note.repliesCount++;
 	});
 
 	noteEvents.on(`reacted:${note.id}`, onReacted);
@@ -223,6 +235,16 @@ export function useNoteCapture(props: {
 
 	// 操作がダブっていないかどうかを簡易的に記録するためのMap
 	const reactionUserMap = new Map<Misskey.entities.User['id'], string | typeof noReaction>();
+
+	function onReconciled(fresh: Misskey.entities.Note): void {
+		$note.reactions = normalizeReactions(fresh.reactions);
+		$note.reactionCount = fresh.reactionCount;
+		$note.reactionEmojis = { ...fresh.reactionEmojis };
+		$note.myReaction = fresh.myReaction;
+		if ($i) reactionUserMap.set($i.id, fresh.myReaction ?? noReaction);
+	}
+
+	noteEvents.on(`reconciled:${note.id}`, onReconciled);
 	let latestPollVotedKey: string | null = null;
 
 	function onReacted(ctx: { userId: Misskey.entities.User['id']; reaction: string; emoji?: { name: string; url: string; } | null; }): void {
@@ -251,6 +273,7 @@ export function useNoteCapture(props: {
 
 		// 確実に一度リアクションされて取り消されている場合のみ処理をとめる（APIで初回読み込み→Streamでアップデート等の場合、reactionUserMapに情報がないため）
 		if (reactionUserMap.has(ctx.userId) && reactionUserMap.get(ctx.userId) === noReaction) return;
+		if (reactionUserMap.has(ctx.userId) && reactionUserMap.get(ctx.userId) !== normalizedName) return;
 		reactionUserMap.set(ctx.userId, noReaction);
 
 		const currentCount = $note.reactions[normalizedName] || 0;
@@ -300,6 +323,7 @@ export function useNoteCapture(props: {
 	}
 
 	onUnmounted(() => {
+		noteEvents.off(`reconciled:${note.id}`, onReconciled);
 		noteEvents.off(`reacted:${note.id}`, onReacted);
 		noteEvents.off(`unreacted:${note.id}`, onUnreacted);
 		noteEvents.off(`pollVoted:${note.id}`, onPollVoted);
