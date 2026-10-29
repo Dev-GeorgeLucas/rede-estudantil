@@ -3961,6 +3961,10 @@ export interface Locale extends ILocale {
      */
     "thereIsUnresolvedAbuseReportWarning": string;
     /**
+     * 通報の状態を更新できませんでした。
+     */
+    "abuseReportsUpdateFailed": string;
+    /**
      * 推奨
      */
     "recommended": string;

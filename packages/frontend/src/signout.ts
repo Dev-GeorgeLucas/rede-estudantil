@@ -10,6 +10,7 @@ import { waiting } from '@/os.js';
 import { unisonReload } from '@/utility/unison-reload.js';
 import { clear } from '@/utility/idb-proxy.js';
 import { $i } from '@/i.js';
+import { globalEvents } from '@/events.js';
 
 export async function signout() {
 	if (!$i) return;
@@ -20,6 +21,7 @@ export async function signout() {
 		await cloudBackup();
 	}
 
+	globalEvents.emit('accountChanging');
 	localStorage.clear();
 
 	const idbAbortController = new AbortController();
