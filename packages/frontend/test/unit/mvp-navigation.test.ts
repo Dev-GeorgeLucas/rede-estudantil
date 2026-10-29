@@ -21,9 +21,11 @@ const visitor = vi.hoisted(() => ({ active: false }));
 const actions = vi.hoisted(() => ({ popupMenu: vi.fn(), post: vi.fn(), select: vi.fn(), success: vi.fn(), commit: vi.fn() }));
 vi.mock('@/i.js', async () => {
 	const { reactive } = await import('vue');
-	const user = reactive({ isAdmin: false, isModerator: false, unreadNotificationsCount: 0, policies: { chatAvailability: 'available', canManageCustomEmojis: false, canManageAvatarDecorations: false } });
+	const user = reactive({ id: 'viewer', token: 'test-token', isAdmin: false, isModerator: false, unreadNotificationsCount: 0, policies: { chatAvailability: 'available', canManageCustomEmojis: false, canManageAvatarDecorations: false } });
 	return { get $i() { return visitor.active ? null : user; }, iAmModerator: false };
 });
+vi.mock('@/stream.js', () => ({ useStream: () => ({ on: vi.fn(), off: vi.fn(), useChannel: () => ({ on: vi.fn(), off: vi.fn(), dispose: vi.fn() }) }) }));
+vi.mock('@/utility/misskey-api.js', () => ({ misskeyApi: vi.fn(async () => []) }));
 vi.mock('@/os.js', () => ({ ...actions, __v_isRef: false }));
 vi.mock('@/instance.js', () => ({ instance: { name: 'School', federation: 'all' } }));
 vi.mock('@/router.js', () => ({ useRouter: () => ({ push: vi.fn() }) }));
@@ -90,12 +92,14 @@ describe('MVP shared navigation', () => {
 		preferReactive.menu = ref([...layout]);
 		preferReactive.showNavbarSubButtons = ref(false);
 		const view = render(component, { props, global });
+
 		function menuBetweenFeedAndMore() {
 			const following = view.container.querySelector('a[href="/feed"]')!;
 			const more = view.container.querySelector('.ti-grid-dots, .ti-dots')!.closest('button')!;
 			const siblings = Array.from(following.parentElement!.children);
 			return siblings.slice(siblings.indexOf(following) + 1, siblings.indexOf(more)).map(el => el.getAttribute('href') ?? '-');
 		}
+
 		expect(menuBetweenFeedAndMore()).toEqual(['/my/notifications', '-', '/chat', '-']);
 		expect(preferState.menu).toEqual(layout);
 		// Live updates/restored layouts must use the same projection in every variant.

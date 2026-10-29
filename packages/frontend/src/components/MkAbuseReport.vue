@@ -91,6 +91,7 @@ import RouterView from '@/components/global/RouterView.vue';
 import MkTextarea from '@/components/MkTextarea.vue';
 import { copyToClipboard } from '@/utility/copy-to-clipboard.js';
 import { createRouter } from '@/router.js';
+import { globalEvents } from '@/events.js';
 
 const props = defineProps<{
 	report: Misskey.entities.AdminAbuseUserReportsResponse[number];
@@ -120,6 +121,7 @@ function resolve(resolvedAs: 'accept' | 'reject' | null) {
 		reportId: props.report.id,
 		resolvedAs,
 	}).then(() => {
+		globalEvents.emit('abuseReportResolved');
 		emit('resolved', props.report.id);
 	});
 }

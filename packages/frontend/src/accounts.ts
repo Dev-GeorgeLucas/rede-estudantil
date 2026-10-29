@@ -16,6 +16,7 @@ import { prefer } from '@/preferences.js';
 import { store } from '@/store.js';
 import { $i } from '@/i.js';
 import { signout } from '@/signout.js';
+import { globalEvents } from '@/events.js';
 
 type AccountWithToken = Misskey.entities.MeDetailed & { token: string };
 
@@ -175,6 +176,8 @@ export async function login(token: AccountWithToken['token'], redirect?: string)
 		showing.value = false;
 		throw reason;
 	});
+
+	globalEvents.emit('accountChanging');
 
 	miLocalStorage.setItem('account', JSON.stringify({
 		...me,

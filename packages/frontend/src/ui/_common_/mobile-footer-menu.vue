@@ -5,9 +5,9 @@ SPDX-License-Identifier: AGPL-3.0-only
 
 <template>
 <div ref="rootEl" :class="$style.root">
-	<button :class="$style.item" class="_button" @click="drawerMenuShowing = true">
+	<button :class="$style.item" class="_button" :aria-label="moderation.state.authorized && (moderation.state.pending || moderation.state.error) ? `${i18n.ts.menu.trim()} — ${moderation.label.value}` : i18n.ts.menu.trim()" @click="drawerMenuShowing = true">
 		<div :class="$style.itemInner">
-			<i :class="$style.itemIcon" class="ti ti-menu-2"></i><span v-if="menuIndicated" :class="$style.itemIndicator" class="_blink"><i class="_indicatorCircle"></i></span>
+			<i :class="$style.itemIcon" class="ti ti-menu-2" aria-hidden="true"></i><span v-if="moderation.state.authorized && (moderation.state.pending || moderation.state.error)" :class="$style.itemIndicator"><i :class="moderation.state.pending ? 'ti ti-alert-circle' : 'ti ti-cloud-off'" aria-hidden="true"></i></span><span v-else-if="menuIndicated" :class="$style.itemIndicator" class="_blink"><i class="_indicatorCircle"></i></span>
 		</div>
 	</button>
 
@@ -43,6 +43,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 <script lang="ts" setup>
 import { computed, ref, useTemplateRef, watch } from 'vue';
 import { $i } from '@/i.js';
+import { usePendingAbuseReports } from '@/composables/use-pending-abuse-reports.js';
 import * as os from '@/os.js';
 import { mainRouter } from '@/router.js';
 import { i18n } from '@/i18n.js';
@@ -50,6 +51,8 @@ import { navbarItemDef } from '@/navbar.js';
 
 const drawerMenuShowing = defineModel<boolean>('drawerMenuShowing');
 const widgetsShowing = defineModel<boolean>('widgetsShowing');
+
+const moderation = usePendingAbuseReports();
 
 const rootEl = useTemplateRef('rootEl');
 const isFeed = computed(() => mainRouter.currentRoute.value.path === '/feed');
@@ -96,6 +99,7 @@ watch(rootEl, () => {
 }
 
 .item {
+	&:focus-visible { outline: 2px solid var(--MI_THEME-focus); outline-offset: -2px; }
 	padding: 12px 0;
 
 	&:first-child {

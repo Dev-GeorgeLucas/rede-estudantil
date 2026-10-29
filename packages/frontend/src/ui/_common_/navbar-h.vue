@@ -21,9 +21,11 @@ SPDX-License-Identifier: AGPL-3.0-only
 				</component>
 			</template>
 			<div :class="$style.divider"></div>
-			<MkA v-if="$i && ($i.isAdmin || $i.isModerator)" v-click-anime v-tooltip="i18n.ts.controlPanel" class="item" :activeClass="$style.active" to="/admin" :behavior="settingsWindowed ? 'window' : null">
-				<i :class="$style.itemIcon" class="ti ti-dashboard ti-fw"></i>
-			</MkA>
+			<XAdminAccess v-if="$i && ($i.isAdmin || $i.isModerator)" compact horizontal>
+				<MkA v-click-anime v-tooltip="i18n.ts.controlPanel" :class="$style.item" :activeClass="$style.active" to="/admin" :aria-label="i18n.ts.controlPanel" :behavior="settingsWindowed ? 'window' : null">
+					<i :class="$style.itemIcon" class="ti ti-dashboard ti-fw"></i>
+				</MkA>
+			</XAdminAccess>
 			<button v-click-anime :class="$style.item" class="_button" @click="more">
 				<i :class="$style.itemIcon" class="ti ti-dots ti-fw"></i>
 				<span v-if="otherNavItemIndicated" :class="$style.indicator" class="_blink"><i class="_indicatorCircle"></i></span>
@@ -49,6 +51,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 <script lang="ts" setup>
 import { computed, defineAsyncComponent, onMounted, ref } from 'vue';
 import { openInstanceMenu } from './common.js';
+import XAdminAccess from './admin-access.vue';
 import * as os from '@/os.js';
 import { navbarItemDef, getVisibleNavbarItems } from '@/navbar.js';
 import MkButton from '@/components/MkButton.vue';
