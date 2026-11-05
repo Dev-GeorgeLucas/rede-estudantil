@@ -11,7 +11,7 @@ import { IdService } from '@/core/IdService.js';
 import { bindThis } from '@/decorators.js';
 import type { ModerationLogPayloads } from '@/types.js';
 import { moderationLogTypes } from '@/types.js';
-import { sanitizeServerSettingsLog } from '@/misc/sanitize-server-settings-log.js';
+import { sanitizeModerationLog } from '@/misc/sanitize-moderation-log.js';
 
 @Injectable()
 export class ModerationLogService {
@@ -29,7 +29,7 @@ export class ModerationLogService {
 			id: this.idService.gen(),
 			userId: moderator.id,
 			type: type,
-			info: type === 'updateServerSettings' ? sanitizeServerSettingsLog(info) : (info as any) ?? {},
+			info: sanitizeModerationLog(type, info) as any ?? {},
 		});
 	}
 }

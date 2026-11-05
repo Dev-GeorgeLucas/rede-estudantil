@@ -9,6 +9,7 @@ import type { ModerationLogsRepository } from '@/models/_.js';
 import { QueryService } from '@/core/QueryService.js';
 import { DI } from '@/di-symbols.js';
 import { ModerationLogEntityService } from '@/core/entities/ModerationLogEntityService.js';
+import { protectedModerationLogTypes } from '@/misc/sanitize-moderation-log.js';
 import { sqlLikeEscape } from '@/misc/sql-like-escape.js';
 
 export const meta = {
@@ -95,10 +96,10 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 
 			if (ps.search != null) {
 				const escapedSearch = sqlLikeEscape(ps.search);
-				// Do not let search matches reveal historical configuration secrets.
+				// Do not let search matches reveal historical configuration or webhook secrets.
 				// Other moderation events retain their existing content search.
-				query.andWhere('(CASE WHEN log.type = :settingsType THEN log.type ELSE log.info::text END) ILIKE :search', {
-					settingsType: 'updateServerSettings',
+				query.andWhere('(CASE WHEN log.type IN (:...protectedTypes) THEN log.type ELSE log.info::text END) ILIKE :search', {
+					protectedTypes: [...protectedModerationLogTypes],
 					search: `%${escapedSearch}%`,
 				});
 			}

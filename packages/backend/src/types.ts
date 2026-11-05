@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
+import type { SystemWebhookSnapshotLog, SystemWebhookUpdateLog } from '@/misc/sanitize-system-webhook-log.js';
+
 /**
  * note - 通知オンにしているユーザーが投稿した
  * follow - フォローされた
@@ -346,19 +348,9 @@ export type ModerationLogPayloads = {
 		userHost: string | null;
 		fileId: string;
 	};
-	createSystemWebhook: {
-		systemWebhookId: string;
-		webhook: any;
-	};
-	updateSystemWebhook: {
-		systemWebhookId: string;
-		before: any;
-		after: any;
-	};
-	deleteSystemWebhook: {
-		systemWebhookId: string;
-		webhook: any;
-	};
+	createSystemWebhook: SystemWebhookSnapshotLog;
+	updateSystemWebhook: SystemWebhookUpdateLog;
+	deleteSystemWebhook: SystemWebhookSnapshotLog;
 	createAbuseReportNotificationRecipient: {
 		recipientId: string;
 		recipient: any;
