@@ -36,3 +36,26 @@ describe('configuration moderation log presentation', () => {
 		}
 	});
 });
+
+describe('system webhook moderation log presentation', () => {
+	test.each(['createSystemWebhook', 'updateSystemWebhook', 'deleteSystemWebhook'])('renders %s using the webhook ID without depending on its free-text name', type => {
+		const snapshot = { id: 'fictionalwebhook', isActive: false, on: ['abuseReport'] };
+		const info = type === 'updateSystemWebhook'
+			? { systemWebhookId: snapshot.id, before: snapshot, after: { ...snapshot, isActive: true }, changedFields: ['isActive', 'url', 'secret', 'name'] }
+			: { systemWebhookId: snapshot.id, webhook: snapshot };
+		const view = render(ModLog, {
+			props: { log: { id: 'fictionallog', type, userId: 'fictionaladmin', createdAt: '2026-01-01T00:00:00Z', user: { username: 'fictional-admin' }, info } as never },
+			global: { components: {
+				MkA: { props: ['to'], template: '<a :href="to"><slot/></a>' },
+				MkTime: { props: ['time'], template: '<time>{{ time }}</time>' },
+			} },
+		});
+		expect(view.getByText(': fictionalwebhook')).toBeTruthy();
+		expect(view.getByRole('link', { name: '@fictional-admin' }).getAttribute('href')).toBe('/admin/user/fictionaladmin');
+		if (info.changedFields) {
+			expect(view.getByText(`${i18n.ts.settings}: ${info.changedFields.join(', ')}`)).toBeTruthy();
+			expect(view.getByTestId('diff').textContent).toContain('false');
+			expect(view.getByTestId('diff').textContent).toContain('true');
+		}
+	});
+});

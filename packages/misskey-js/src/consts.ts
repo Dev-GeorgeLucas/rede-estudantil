@@ -483,16 +483,17 @@ export type ModerationLogPayloads = {
 	};
 	createSystemWebhook: {
 		systemWebhookId: string;
-		webhook: SystemWebhook;
+		webhook: Partial<Pick<SystemWebhook, 'id' | 'isActive' | 'on'>>;
 	};
 	updateSystemWebhook: {
 		systemWebhookId: string;
-		before: SystemWebhook;
-		after: SystemWebhook;
+		before: Partial<Pick<SystemWebhook, 'id' | 'isActive' | 'on'>>;
+		after: Partial<Pick<SystemWebhook, 'id' | 'isActive' | 'on'>>;
+		changedFields?: ('isActive' | 'on' | 'name' | 'url' | 'secret')[];
 	};
 	deleteSystemWebhook: {
 		systemWebhookId: string;
-		webhook: SystemWebhook;
+		webhook: Partial<Pick<SystemWebhook, 'id' | 'isActive' | 'on'>>;
 	};
 	createAbuseReportNotificationRecipient: {
 		recipientId: string;

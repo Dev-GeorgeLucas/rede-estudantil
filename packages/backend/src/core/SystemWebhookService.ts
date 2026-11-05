@@ -14,6 +14,7 @@ import { IdService } from '@/core/IdService.js';
 import { QueueService } from '@/core/QueueService.js';
 import { ModerationLogService } from '@/core/ModerationLogService.js';
 import { LoggerService } from '@/core/LoggerService.js';
+import { sanitizeSystemWebhookSnapshotLog, sanitizeSystemWebhookUpdateLog } from '@/misc/sanitize-system-webhook-log.js';
 import Logger from '@/logger.js';
 import { Packed } from '@/misc/json-schema.js';
 import { AbuseReportResolveType } from '@/models/AbuseUserReport.js';
@@ -126,10 +127,10 @@ export class SystemWebhookService implements OnApplicationShutdown {
 		const webhook = await this.systemWebhooksRepository.findOneByOrFail({ id });
 		this.globalEventService.publishInternalEvent('systemWebhookCreated', webhook);
 		this.moderationLogService
-			.log(updater, 'createSystemWebhook', {
+			.log(updater, 'createSystemWebhook', sanitizeSystemWebhookSnapshotLog({
 				systemWebhookId: webhook.id,
 				webhook: webhook,
-			});
+			}));
 
 		return webhook;
 	}
@@ -162,11 +163,11 @@ export class SystemWebhookService implements OnApplicationShutdown {
 		const afterEntity = await this.systemWebhooksRepository.findOneByOrFail({ id: beforeEntity.id });
 		this.globalEventService.publishInternalEvent('systemWebhookUpdated', afterEntity);
 		this.moderationLogService
-			.log(updater, 'updateSystemWebhook', {
+			.log(updater, 'updateSystemWebhook', sanitizeSystemWebhookUpdateLog({
 				systemWebhookId: beforeEntity.id,
 				before: beforeEntity,
 				after: afterEntity,
-			});
+			}));
 
 		return afterEntity;
 	}
@@ -181,10 +182,10 @@ export class SystemWebhookService implements OnApplicationShutdown {
 
 		this.globalEventService.publishInternalEvent('systemWebhookDeleted', webhook);
 		this.moderationLogService
-			.log(updater, 'deleteSystemWebhook', {
+			.log(updater, 'deleteSystemWebhook', sanitizeSystemWebhookSnapshotLog({
 				systemWebhookId: webhook.id,
 				webhook,
-			});
+			}));
 	}
 
 	/**

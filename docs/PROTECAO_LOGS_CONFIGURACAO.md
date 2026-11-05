@@ -59,9 +59,10 @@ protegido e validação isolada. Não houve migration, rotação ou alteração 
 permissões. Atualização e leitura continuam exclusivas de administrador,
 protegidas por `requireAdmin`, escopos existentes e `ApiCallService`.
 
-Pendências fora do escopo: `SystemWebhookService` registra entidades contendo URL
-e segredo em eventos próprios; `AbuseReportNotificationService` registra
-snapshots de destinatários. Esses fluxos precisam de auditoria específica.
+A proteção dos eventos próprios de `SystemWebhookService` foi tratada na tarefa
+seguinte, documentada em [PROTECAO_LOGS_WEBHOOKS.md](PROTECAO_LOGS_WEBHOOKS.md).
+Permanece fora do escopo deste fluxo o registro de snapshots de destinatários
+em `AbuseReportNotificationService`; ele precisa de tratamento específico.
 `metaUpdated` transporta snapshots internos para sincronização entre processos;
 esse evento não é o registro de auditoria tratado aqui.
 

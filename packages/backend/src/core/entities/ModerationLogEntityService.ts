@@ -11,7 +11,7 @@ import type { } from '@/models/Blocking.js';
 import { MiModerationLog } from '@/models/ModerationLog.js';
 import { bindThis } from '@/decorators.js';
 import { IdService } from '@/core/IdService.js';
-import { sanitizeServerSettingsLog } from '@/misc/sanitize-server-settings-log.js';
+import { sanitizeModerationLog } from '@/misc/sanitize-moderation-log.js';
 import type { Packed } from '@/misc/json-schema.js';
 import { UserEntityService } from './UserEntityService.js';
 
@@ -39,7 +39,7 @@ export class ModerationLogEntityService {
 			id: log.id,
 			createdAt: this.idService.parse(log.id).date.toISOString(),
 			type: log.type,
-			info: log.type === 'updateServerSettings' ? sanitizeServerSettingsLog(log.info) : log.info,
+			info: sanitizeModerationLog(log.type, log.info),
 			userId: log.userId,
 			user: hint?.packedUser ?? this.userEntityService.pack(log.user ?? log.userId, null, {
 				schema: 'UserDetailedNotMe',

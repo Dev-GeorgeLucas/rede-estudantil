@@ -73,9 +73,9 @@ SPDX-License-Identifier: AGPL-3.0-only
 		<span v-else-if="log.type === 'createAvatarDecoration'">: {{ log.info.avatarDecoration.name }}</span>
 		<span v-else-if="log.type === 'updateAvatarDecoration'">: {{ log.info.before.name }}</span>
 		<span v-else-if="log.type === 'deleteAvatarDecoration'">: {{ log.info.avatarDecoration.name }}</span>
-		<span v-else-if="log.type === 'createSystemWebhook'">: {{ log.info.webhook.name }}</span>
-		<span v-else-if="log.type === 'updateSystemWebhook'">: {{ log.info.before.name }}</span>
-		<span v-else-if="log.type === 'deleteSystemWebhook'">: {{ log.info.webhook.name }}</span>
+		<span v-else-if="log.type === 'createSystemWebhook'">: {{ log.info.systemWebhookId }}</span>
+		<span v-else-if="log.type === 'updateSystemWebhook'">: {{ log.info.systemWebhookId }}</span>
+		<span v-else-if="log.type === 'deleteSystemWebhook'">: {{ log.info.systemWebhookId }}</span>
 		<span v-else-if="log.type === 'createAbuseReportNotificationRecipient'">: {{ log.info.recipient.name }}</span>
 		<span v-else-if="log.type === 'updateAbuseReportNotificationRecipient'">: {{ log.info.before.name }}</span>
 		<span v-else-if="log.type === 'deleteAbuseReportNotificationRecipient'">: {{ log.info.recipient.name }}</span>
@@ -203,6 +203,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 			</div>
 		</template>
 		<template v-else-if="log.type === 'updateSystemWebhook'">
+			<div v-if="log.info.changedFields?.length">{{ i18n.ts.settings }}: {{ log.info.changedFields.join(', ') }}</div>
 			<div :class="$style.diff">
 				<CodeDiff :context="5" :hideHeader="true" :oldString="JSON5.stringify(log.info.before, null, '\t')" :newString="JSON5.stringify(log.info.after, null, '\t')" language="javascript" maxHeight="300px"/>
 			</div>

@@ -147,7 +147,7 @@ describe('configuration moderation logs', () => {
 		expect(response[0].info).toEqual({ before: { enableEmail: false }, after: { enableEmail: true }, changedFields: ['enableEmail', 'smtpPass'] });
 		expect(JSON.stringify(response)).not.toContain('SECRET');
 		expect(stored).toEqual(original);
-		expect(query.andWhere).toHaveBeenCalledWith('(CASE WHEN log.type = :settingsType THEN log.type ELSE log.info::text END) ILIKE :search', { settingsType: 'updateServerSettings', search: '%fictional%' });
+		expect(query.andWhere).toHaveBeenCalledWith('(CASE WHEN log.type IN (:...protectedTypes) THEN log.type ELSE log.info::text END) ILIKE :search', { protectedTypes: ['updateServerSettings', 'createSystemWebhook', 'updateSystemWebhook', 'deleteSystemWebhook'], search: '%fictional%' });
 	});
 
 	test('other moderation events are unchanged', async () => {
