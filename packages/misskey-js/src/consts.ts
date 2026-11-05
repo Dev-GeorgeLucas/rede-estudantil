@@ -7,7 +7,6 @@ import type {
 	Flash,
 	GalleryPost,
 	InviteCode,
-	MetaDetailed,
 	Note,
 	Page,
 	Role,
@@ -277,8 +276,9 @@ type ReceivedAbuseReport = {
 
 export type ModerationLogPayloads = {
 	updateServerSettings: {
-		before: MetaDetailed | null;
-		after: MetaDetailed | null;
+		before: Record<string, boolean | number | null> | null;
+		after: Record<string, boolean | number | null> | null;
+		changedFields?: string[];
 	};
 	suspend: {
 		userId: string;

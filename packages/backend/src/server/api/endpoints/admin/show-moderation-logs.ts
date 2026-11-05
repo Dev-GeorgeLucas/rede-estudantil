@@ -95,7 +95,12 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 
 			if (ps.search != null) {
 				const escapedSearch = sqlLikeEscape(ps.search);
-				query.andWhere('log.info::text ILIKE :search', { search: `%${escapedSearch}%` });
+				// Do not let search matches reveal historical configuration secrets.
+				// Other moderation events retain their existing content search.
+				query.andWhere('(CASE WHEN log.type = :settingsType THEN log.type ELSE log.info::text END) ILIKE :search', {
+					settingsType: 'updateServerSettings',
+					search: `%${escapedSearch}%`,
+				});
 			}
 
 			const logs = await query.limit(ps.limit).getMany();

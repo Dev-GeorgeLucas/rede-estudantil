@@ -8,6 +8,7 @@ import { Endpoint } from '@/server/api/endpoint-base.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { MetaService } from '@/core/MetaService.js';
 import { ModerationLogService } from '@/core/ModerationLogService.js';
+import { sanitizeServerSettingsLog } from '@/misc/sanitize-server-settings-log.js';
 
 export const meta = {
 	tags: ['admin', 'role'],
@@ -46,10 +47,10 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 			const after = await this.metaService.fetch(true);
 
 			this.globalEventService.publishInternalEvent('policiesUpdated', after.policies);
-			this.moderationLogService.log(me, 'updateServerSettings', {
-				before: before.policies,
-				after: after.policies,
-			});
+			this.moderationLogService.log(me, 'updateServerSettings', sanitizeServerSettingsLog({
+				before: { policies: before.policies },
+				after: { policies: after.policies },
+			}));
 		});
 	}
 }

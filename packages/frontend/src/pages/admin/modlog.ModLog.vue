@@ -141,8 +141,9 @@ SPDX-License-Identifier: AGPL-3.0-only
 		</div>
 
 		<template v-if="log.type === 'updateServerSettings'">
+			<div v-if="log.info.changedFields?.length">{{ i18n.ts.settings }}: {{ log.info.changedFields.join(', ') }}</div>
 			<div :class="$style.diff">
-				<CodeDiff :context="5" :hideHeader="true" :oldString="JSON5.stringify(log.info.before, null, '\t')" :newString="JSON5.stringify(log.info.after, null, '\t')" language="javascript" maxHeight="300px"/>
+				<CodeDiff :context="5" :hideHeader="true" :oldString="JSON5.stringify(log.info.before ?? {}, null, '\t')" :newString="JSON5.stringify(log.info.after ?? {}, null, '\t')" language="javascript" maxHeight="300px"/>
 			</div>
 		</template>
 		<template v-else-if="log.type === 'updateUserNote'">
