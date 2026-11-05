@@ -139,8 +139,9 @@ export const moderationLogTypes = [
 
 export type ModerationLogPayloads = {
 	updateServerSettings: {
-		before: any | null;
-		after: any | null;
+		before: Record<string, boolean | number | null>;
+		after: Record<string, boolean | number | null>;
+		changedFields: string[];
 	};
 	suspend: {
 		userId: string;

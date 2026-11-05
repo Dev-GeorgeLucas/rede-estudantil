@@ -9,6 +9,7 @@ import type { MiMeta } from '@/models/Meta.js';
 import { ModerationLogService } from '@/core/ModerationLogService.js';
 import { Endpoint } from '@/server/api/endpoint-base.js';
 import { MetaService } from '@/core/MetaService.js';
+import { sanitizeServerSettingsLog } from '@/misc/sanitize-server-settings-log.js';
 
 export const meta = {
 	tags: ['admin'],
@@ -798,10 +799,10 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 
 			const after = await this.metaService.fetch(true);
 
-			this.moderationLogService.log(me, 'updateServerSettings', {
+			this.moderationLogService.log(me, 'updateServerSettings', sanitizeServerSettingsLog({
 				before,
 				after,
-			});
+			}));
 		});
 	}
 }
