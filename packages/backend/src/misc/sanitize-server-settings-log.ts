@@ -23,6 +23,7 @@ const metaFields = {
 	hiddenTags: 'changedOnly',
 	blockedHosts: 'changedOnly',
 	sensitiveWords: 'changedOnly',
+	reviewWords: 'changedOnly',
 	prohibitedWords: 'changedOnly',
 	prohibitedWordsForNameOfUser: 'changedOnly',
 	silencedHosts: 'changedOnly',

@@ -9,6 +9,8 @@ import type { MiMeta } from '@/models/Meta.js';
 import { ModerationLogService } from '@/core/ModerationLogService.js';
 import { Endpoint } from '@/server/api/endpoint-base.js';
 import { MetaService } from '@/core/MetaService.js';
+import { ApiError } from '@/server/api/error.js';
+import { MAX_REVIEW_WORDS, MAX_REVIEW_WORD_LENGTH, normalizeReviewWords } from '@/misc/note-review.js';
 import { sanitizeServerSettingsLog } from '@/misc/sanitize-server-settings-log.js';
 
 export const meta = {
@@ -17,6 +19,9 @@ export const meta = {
 	requireCredential: true,
 	requireAdmin: true,
 	kind: 'write:admin:meta',
+	errors: {
+		invalidReviewWords: { message: 'Invalid literal review words.', code: 'INVALID_REVIEW_WORDS', id: '072638b3-df37-4dbd-844e-d5419eab1a2d' },
+	},
 } as const;
 
 export const paramDef = {
@@ -37,6 +42,10 @@ export const paramDef = {
 			type: 'array', nullable: true, items: {
 				type: 'string',
 			},
+		},
+		reviewWords: {
+			type: 'array', maxItems: MAX_REVIEW_WORDS,
+			items: { type: 'string', maxLength: MAX_REVIEW_WORD_LENGTH },
 		},
 		sensitiveWords: {
 			type: 'array', nullable: true, items: {
@@ -194,7 +203,7 @@ export const paramDef = {
 			type: 'array', nullable: true,
 			items: {
 				type: 'string',
-			}
+			},
 		},
 		federation: {
 			type: 'string',
@@ -259,6 +268,15 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 
 			if (Array.isArray(ps.blockedHosts)) {
 				set.blockedHosts = ps.blockedHosts.filter(Boolean).map(x => x.toLowerCase());
+			}
+
+			if (ps.reviewWords !== undefined) {
+				try {
+					set.reviewWords = normalizeReviewWords(ps.reviewWords);
+				} catch (error) {
+					if (error instanceof RangeError) throw new ApiError(meta.errors.invalidReviewWords);
+					throw error;
+				}
 			}
 
 			if (Array.isArray(ps.sensitiveWords)) {
