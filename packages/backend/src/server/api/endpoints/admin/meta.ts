@@ -168,6 +168,9 @@ export const meta = {
 					type: 'string',
 				},
 			},
+			reviewWords: {
+				type: 'array', optional: false, nullable: false, items: { type: 'string' },
+			},
 			sensitiveWords: {
 				type: 'array',
 				optional: false, nullable: false,
@@ -698,6 +701,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 				blockedHosts: instance.blockedHosts,
 				silencedHosts: instance.silencedHosts,
 				mediaSilencedHosts: instance.mediaSilencedHosts,
+				reviewWords: instance.reviewWords,
 				sensitiveWords: instance.sensitiveWords,
 				prohibitedWords: instance.prohibitedWords,
 				prohibitedWordsForNameOfUser: instance.prohibitedWordsForNameOfUser,

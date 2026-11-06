@@ -88,6 +88,9 @@ export class MiMeta {
 	})
 	public sensitiveWords: string[];
 
+	@Column('varchar', { length: 100, array: true, default: '{}' })
+	public reviewWords: string[];
+
 	@Column('varchar', {
 		length: 1024, array: true, default: '{}',
 	})

@@ -9469,6 +9469,7 @@ export interface operations {
                         pinnedUsers: string[];
                         hiddenTags: string[];
                         blockedHosts: string[];
+                        reviewWords: string[];
                         sensitiveWords: string[];
                         prohibitedWords: string[];
                         prohibitedWordsForNameOfUser: string[];
@@ -12963,6 +12964,7 @@ export interface operations {
                     pinnedUsers?: string[] | null;
                     hiddenTags?: string[] | null;
                     blockedHosts?: string[] | null;
+                    reviewWords?: string[];
                     sensitiveWords?: string[] | null;
                     prohibitedWords?: string[] | null;
                     prohibitedWordsForNameOfUser?: string[] | null;

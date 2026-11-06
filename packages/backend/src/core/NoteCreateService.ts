@@ -12,6 +12,7 @@ import { extractMentions } from '@/misc/extract-mentions.js';
 import { extractCustomEmojisFromMfm } from '@/misc/extract-custom-emojis-from-mfm.js';
 import { extractHashtags } from '@/misc/extract-hashtags.js';
 import type { IMentionedRemoteUsers } from '@/models/Note.js';
+import { insertNoteReview, matchedReviewWords } from '@/misc/note-review.js';
 import { MiNote } from '@/models/Note.js';
 import type { BlockingsRepository, ChannelFollowingsRepository, ChannelsRepository, DriveFilesRepository, FollowingsRepository, InstancesRepository, MiFollowing, MiMeta, MutingsRepository, NotesRepository, NoteThreadMutingsRepository, UserListMembershipsRepository, UserProfilesRepository, UsersRepository } from '@/models/_.js';
 import type { MiDriveFile } from '@/models/DriveFile.js';
@@ -700,26 +701,34 @@ export class NoteCreateService implements OnApplicationShutdown {
 			}));
 		}
 
-		// 投稿を作成
+		const reviewWords = this.meta.reviewWords?.length
+			? matchedReviewWords(insert, this.meta.reviewWords, data.poll?.choices)
+			: [];
+
+		// Persist the note, poll and review case atomically, before publication side effects.
 		try {
-			if (insert.hasPoll) {
+			if (insert.hasPoll || reviewWords.length > 0) {
 				// Start transaction
 				await this.db.transaction(async transactionalEntityManager => {
 					await transactionalEntityManager.insert(MiNote, insert);
 
-					const poll = new MiPoll({
-						noteId: insert.id,
-						choices: data.poll!.choices,
-						expiresAt: data.poll!.expiresAt,
-						multiple: data.poll!.multiple,
-						votes: new Array(data.poll!.choices.length).fill(0),
-						noteVisibility: insert.visibility,
-						userId: user.id,
-						userHost: user.host,
-						channelId: insert.channelId,
-					});
+					if (insert.hasPoll) {
+						const poll = new MiPoll({
+							noteId: insert.id,
+							choices: data.poll!.choices,
+							expiresAt: data.poll!.expiresAt,
+							multiple: data.poll!.multiple,
+							votes: new Array(data.poll!.choices.length).fill(0),
+							noteVisibility: insert.visibility,
+							userId: user.id,
+							userHost: user.host,
+							channelId: insert.channelId,
+						});
 
-					await transactionalEntityManager.insert(MiPoll, poll);
+						await transactionalEntityManager.insert(MiPoll, poll);
+					}
+
+					await insertNoteReview(transactionalEntityManager, insert.id, reviewWords);
 				});
 			} else {
 				await this.notesRepository.insert(insert);
