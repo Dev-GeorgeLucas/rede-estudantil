@@ -197,6 +197,8 @@ export type Channels = {
 	admin: {
 		params: null;
 		events: {
+			noteReviewCreated: Record<string, never>;
+			noteReviewResolved: Record<string, never>;
 			newAbuseUserReport: {
 				id: string;
 				targetUserId: string;

@@ -105,10 +105,11 @@ function insertionSubject(words: string[], fail = false) {
 	const commitGate = new Promise<void>(resolve => { commit = resolve; });
 	const transaction = vi.fn(async callback => { await callback(manager); await commitGate; });
 	const fastInsert = vi.fn().mockResolvedValue({});
+	const notify = vi.fn().mockResolvedValue(undefined);
 	const subject = Object.assign(Object.create(NoteCreateService.prototype), {
-		meta: { reviewWords: words }, db: { transaction }, notesRepository: { insert: fastInsert }, idService: { gen: () => 'fictionalnote' },
+		noteReviewService: { notify }, meta: { reviewWords: words }, db: { transaction }, notesRepository: { insert: fastInsert }, idService: { gen: () => 'fictionalnote' },
 	}) as { insertNote: (user: unknown, data: unknown, tags: string[], emojis: string[], mentions: unknown[]) => Promise<MiNote> };
-	return { subject, manager, builder, transaction, fastInsert, commit };
+	return { subject, manager, builder, transaction, fastInsert, commit, notify };
 }
 
 describe('note/poll/review commit boundary', () => {
@@ -119,6 +120,7 @@ describe('note/poll/review commit boundary', () => {
 			const pending = ctx.subject.insertNote({ id: 'fictionaluser', host: null }, { ...note, poll: poll ? { choices: ['neutro'], expiresAt: null, multiple: false } : null }, [], [], []).then(value => { returned = true; return value; });
 			await vi.waitFor(() => expect(ctx.builder.execute).toHaveBeenCalledOnce());
 			expect(returned).toBe(false);
+			expect(ctx.notify).not.toHaveBeenCalled();
 			expect(ctx.manager.insert.mock.calls[0][0]).toBe(MiNote);
 			if (poll) expect(ctx.manager.insert.mock.calls[1][0]).toBe(MiPoll);
 			expect(ctx.builder.into).toHaveBeenCalledWith(MiNoteReview);
@@ -128,6 +130,7 @@ describe('note/poll/review commit boundary', () => {
 			ctx.commit();
 			expect((await pending).visibility).toBe('public');
 			expect(returned).toBe(true);
+			expect(ctx.notify).toHaveBeenCalledWith('noteReviewCreated');
 		})();
 	});
 

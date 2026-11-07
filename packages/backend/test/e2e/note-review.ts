@@ -61,7 +61,7 @@ test('HTTP/SQL: independent configuration and atomic, private, durable review ca
 	const first = (await cases())[0];
 	expect(first).toMatchObject({ originalNoteId: matched.id, noteId: matched.id, matchedWords: ['termoalfa', 'termobeta'], state: 'pending' });
 	expect(first.createdAt).toBeInstanceOf(Date);
-	expect(Object.keys(first).sort()).toEqual(['createdAt', 'matchedWords', 'noteId', 'originalNoteId', 'state'].sort());
+	expect(Object.keys(first).sort()).toEqual(['createdAt', 'matchedWords', 'noteId', 'originalNoteId', 'state', 'resolvedAt', 'resolvedById', 'resolution'].sort());
 	// Multiple attempts use independent transactions/connections; no state reset on conflict.
 	await database.query('UPDATE note_review SET state=\'resolved\' WHERE "originalNoteId"=$1', [matched.id]);
 	await Promise.all(Array.from({ length: 8 }, () => database.transaction(manager => insertNoteReview(manager, matched.id, ['termoalfa']))));

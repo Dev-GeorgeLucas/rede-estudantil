@@ -75,6 +75,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 		<span v-else-if="log.type === 'deleteAvatarDecoration'">: {{ log.info.avatarDecoration.name }}</span>
 		<span v-else-if="log.type === 'createSystemWebhook'">: {{ log.info.systemWebhookId }}</span>
 		<span v-else-if="log.type === 'updateSystemWebhook'">: {{ log.info.systemWebhookId }}</span>
+		<span v-else-if="log.type === 'resolveNoteReview'">: {{ log.info.caseId }}</span>
 		<span v-else-if="log.type === 'deleteSystemWebhook'">: {{ log.info.systemWebhookId }}</span>
 		<span v-else-if="log.type === 'createAbuseReportNotificationRecipient'">: {{ log.info.recipient.name }}</span>
 		<span v-else-if="log.type === 'updateAbuseReportNotificationRecipient'">: {{ log.info.before.name }}</span>
@@ -224,6 +225,10 @@ SPDX-License-Identifier: AGPL-3.0-only
 			</div>
 		</template>
 
+		<div v-if="log.type === 'resolveNoteReview'" class="_gaps_s">
+			<div>{{ i18n.ts._noteReview.outcome }}: {{ i18n.ts._noteReview[log.info.resolution] }}</div>
+			<time :datetime="log.info.resolvedAt">{{ new Date(log.info.resolvedAt).toLocaleString() }}</time>
+		</div>
 		<details>
 			<summary>raw</summary>
 			<pre>{{ JSON5.stringify(log, null, '\t') }}</pre>

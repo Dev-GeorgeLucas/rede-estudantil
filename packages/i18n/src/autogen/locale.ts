@@ -11473,6 +11473,10 @@ export interface Locale extends ILocale {
     };
     "_moderationLogTypes": {
         /**
+         * ルールによる確認を終了
+         */
+        "resolveNoteReview": string;
+        /**
          * ジョブキューをクリア
          */
         "clearQueue": string;
@@ -13409,5 +13413,79 @@ export interface Locale extends ILocale {
          * MFM
          */
         "mfm": string;
+    };
+    "_noteReview": {
+        /**
+         * ルールによる確認待ち
+         */
+        "title": string;
+        /**
+         * 確認対象の語句
+         */
+        "words": string;
+        /**
+         * 禁止語やセンシティブワードとは別の設定です。新しいローカルの公開投稿のみを調べます。一致すると人による確認の対象になりますが、投稿のブロックやアカウントへの制裁は行いません。
+         */
+        "wordsDescription": string;
+        /**
+         * 1行に1つ、最大100語句、各語句はUnicodeで100文字まで。正規表現やワイルドカードは使えません。大文字・小文字とUnicode表記を正規化して比較し、アクセントは区別します。termoalfa! は termoalfa に一致しますが、supertermoalfa は一致しません。
+         */
+        "wordsLimits": string;
+        /**
+         * 設定された語句との一致による自動的な確認候補です。通報者はいません。一致だけで違反とは判断できません。対応は文脈を確認して決定してください。
+         */
+        "explanation": string;
+        /**
+         * ルールによる自動検出
+         */
+        "automatic": string;
+        /**
+         * 一致した語句
+         */
+        "matchedWords": string;
+        /**
+         * 確認結果
+         */
+        "outcome": string;
+        /**
+         * 誤検出・対応不要
+         */
+        "falsePositive": string;
+        /**
+         * 確認完了
+         */
+        "reviewed": string;
+        /**
+         * コンテンツを確認できない
+         */
+        "unavailable": string;
+        /**
+         * 確認を終了
+         */
+        "close": string;
+        /**
+         * この案件はすでに終了しています。先に確定した担当者と結果を表示します。
+         */
+        "alreadyResolved": string;
+        /**
+         * ルールによる未確認の案件があります。
+         */
+        "pendingWarning": string;
+        /**
+         * モデレーションの未処理案件があります。
+         */
+        "pendingModeration": string;
+        /**
+         * 新しい案件を読み込む
+         */
+        "newCases": string;
+        /**
+         * 確認待ちの状態を更新できませんでした。
+         */
+        "updateFailed": string;
+        /**
+         * 表示中に終了した案件は結果を同じ位置に表示します。再読み込みすると待ち行列から除かれます。
+         */
+        "updatedCases": string;
     };
 }

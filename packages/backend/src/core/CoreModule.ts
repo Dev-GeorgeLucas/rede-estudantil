@@ -5,6 +5,7 @@
 
 import { Module } from '@nestjs/common';
 import { FanoutTimelineEndpointService } from '@/core/FanoutTimelineEndpointService.js';
+import { NoteReviewService } from '@/core/NoteReviewService.js';
 import { AbuseReportService } from '@/core/AbuseReportService.js';
 import { SystemWebhookEntityService } from '@/core/entities/SystemWebhookEntityService.js';
 import {
@@ -314,6 +315,7 @@ const $ApQuestionService: Provider = { provide: 'ApQuestionService', useExisting
 	providers: [
 		LoggerService,
 		AbuseReportService,
+		NoteReviewService,
 		AbuseReportNotificationService,
 		AccountMoveService,
 		AccountUpdateService,
@@ -616,6 +618,7 @@ const $ApQuestionService: Provider = { provide: 'ApQuestionService', useExisting
 		QueueModule,
 		LoggerService,
 		AbuseReportService,
+		NoteReviewService,
 		AbuseReportNotificationService,
 		AccountMoveService,
 		AccountUpdateService,

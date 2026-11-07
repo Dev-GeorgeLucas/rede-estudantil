@@ -15,6 +15,8 @@ export * as 'admin/abuse-report/notification-recipient/delete' from './endpoints
 export * as 'admin/abuse-report/notification-recipient/list' from './endpoints/admin/abuse-report/notification-recipient/list.js';
 export * as 'admin/abuse-report/notification-recipient/show' from './endpoints/admin/abuse-report/notification-recipient/show.js';
 export * as 'admin/abuse-report/notification-recipient/update' from './endpoints/admin/abuse-report/notification-recipient/update.js';
+export * as 'admin/note-reviews' from './endpoints/admin/note-reviews.js';
+export * as 'admin/resolve-note-review' from './endpoints/admin/resolve-note-review.js';
 export * as 'admin/abuse-user-reports' from './endpoints/admin/abuse-user-reports.js';
 export * as 'admin/accounts/create' from './endpoints/admin/accounts/create.js';
 export * as 'admin/accounts/delete' from './endpoints/admin/accounts/delete.js';
