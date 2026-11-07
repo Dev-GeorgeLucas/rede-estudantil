@@ -26,6 +26,15 @@ export class MiNoteReview {
 	@Column('timestamp with time zone', { default: () => 'CURRENT_TIMESTAMP' })
 	public createdAt: Date;
 
+	@Column('varchar', { length: 32, nullable: true })
+	public resolvedById: string | null;
+
+	@Column('timestamp with time zone', { nullable: true })
+	public resolvedAt: Date | null;
+
+	@Column('varchar', { length: 32, nullable: true })
+	public resolution: 'falsePositive' | 'reviewed' | 'unavailable' | null;
+
 	@Column('varchar', { length: 16, default: 'pending' })
 	public state: string;
 }

@@ -165,6 +165,7 @@ export const moderationLogTypes = [
 	'markSensitiveDriveFile',
 	'unmarkSensitiveDriveFile',
 	'resolveAbuseReport',
+	'resolveNoteReview',
 	'forwardAbuseReport',
 	'updateAbuseReportNote',
 	'createInvitation',
@@ -418,6 +419,11 @@ export type ModerationLogPayloads = {
 		fileUserId: string | null;
 		fileUserUsername: string | null;
 		fileUserHost: string | null;
+	};
+	resolveNoteReview: {
+		caseId: string;
+		resolvedAt: string;
+		resolution: 'falsePositive' | 'reviewed' | 'unavailable';
 	};
 	resolveAbuseReport: {
 		reportId: string;

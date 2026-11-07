@@ -12,6 +12,7 @@ import { extractMentions } from '@/misc/extract-mentions.js';
 import { extractCustomEmojisFromMfm } from '@/misc/extract-custom-emojis-from-mfm.js';
 import { extractHashtags } from '@/misc/extract-hashtags.js';
 import type { IMentionedRemoteUsers } from '@/models/Note.js';
+import { NoteReviewService } from '@/core/NoteReviewService.js';
 import { insertNoteReview, matchedReviewWords } from '@/misc/note-review.js';
 import { MiNote } from '@/models/Note.js';
 import type { BlockingsRepository, ChannelFollowingsRepository, ChannelsRepository, DriveFilesRepository, FollowingsRepository, InstancesRepository, MiFollowing, MiMeta, MutingsRepository, NotesRepository, NoteThreadMutingsRepository, UserListMembershipsRepository, UserProfilesRepository, UsersRepository } from '@/models/_.js';
@@ -270,6 +271,7 @@ export class NoteCreateService implements OnApplicationShutdown {
 		private utilityService: UtilityService,
 		private userBlockingService: UserBlockingService,
 		private cacheService: CacheService,
+		private noteReviewService: NoteReviewService,
 	) {
 		this.updateNotesCountQueue = new CollapsedQueue(process.env.NODE_ENV !== 'test' ? 60 * 1000 * 5 : 0, this.collapseNotesCount, this.performUpdateNotesCount);
 	}
@@ -733,6 +735,9 @@ export class NoteCreateService implements OnApplicationShutdown {
 			} else {
 				await this.notesRepository.insert(insert);
 			}
+
+			// Invalidation carries no content/terms and is emitted only after commit.
+			if (reviewWords.length > 0) await this.noteReviewService.notify('noteReviewCreated');
 
 			return {
 				...insert,

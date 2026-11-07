@@ -9,7 +9,10 @@ import { onBeforeUnmount, shallowReactive } from 'vue';
 
 type Events = {
 	accountChanging: () => void;
+	moderationAccessDenied: () => void;
 	abuseReportResolved: () => void;
+	noteReviewResolved: () => void;
+	noteReviewsChanged: () => void;
 	clientNotification: (notification: Misskey.entities.Notification) => void;
 	notePosted: (note: Misskey.entities.Note) => void;
 	noteDeleted: (noteId: Misskey.entities.Note['id']) => void;

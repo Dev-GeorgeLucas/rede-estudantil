@@ -4,9 +4,9 @@ SPDX-License-Identifier: AGPL-3.0-only
 -->
 
 <template>
-<PageWithHeader :actions="headerActions" :tabs="headerTabs">
+<PageWithHeader :tab="tab" :actions="headerActions" :tabs="headerTabs" :swipable="false" @update:tab="selectTab">
 	<div class="_spacer" style="--MI_SPACER-w: 900px;">
-		<div :class="$style.root" class="_gaps">
+		<div v-if="tab === 'human'" :id="`${id}-human`" role="tabpanel" :aria-labelledby="`${id}-human-tab`" :class="$style.root" class="_gaps">
 			<div :class="$style.subMenus" class="_gaps">
 				<MkButton type="routerLink" to="/admin/abuse-report-notification-recipient" primary>{{ i18n.ts.notificationSetting }}</MkButton>
 			</div>
@@ -44,12 +44,15 @@ SPDX-License-Identifier: AGPL-3.0-only
 				</div>
 			</MkPagination>
 		</div>
+		<div v-else :id="`${id}-rules`" role="tabpanel" :aria-labelledby="`${id}-rules-tab`"><XNoteReviews/></div>
 	</div>
 </PageWithHeader>
 </template>
 
 <script lang="ts" setup>
-import { computed, ref, markRaw } from 'vue';
+import { computed, ref, markRaw, useId, watch } from 'vue';
+import XNoteReviews from './note-reviews.vue';
+import { useRouter } from '@/router.js';
 import MkSelect from '@/components/MkSelect.vue';
 import MkPagination from '@/components/MkPagination.vue';
 import XAbuseReport from '@/components/MkAbuseReport.vue';
@@ -111,7 +114,19 @@ function resolved(reportId: string) {
 
 const headerActions = computed(() => []);
 
-const headerTabs = computed(() => []);
+const router = useRouter();
+const id = useId();
+const tab = ref('human');
+watch(router.currentRef, current => { tab.value = current._parsedRoute.hash === 'rules' ? 'rules' : 'human'; }, { immediate: true });
+
+function selectTab(key: string | undefined) {
+	if (key && key !== tab.value) router.pushByPath(key === 'rules' ? '/admin/abuses#rules' : '/admin/abuses');
+}
+
+const headerTabs = computed(() => [
+	{ key: 'human', title: i18n.ts.abuseReports, icon: 'ti ti-exclamation-circle', panelId: `${id}-human` },
+	{ key: 'rules', title: i18n.ts._noteReview.title, icon: 'ti ti-flag', panelId: `${id}-rules` },
+]);
 
 definePage(() => ({
 	title: i18n.ts.abuseReports,
@@ -137,6 +152,7 @@ definePage(() => ({
 .inputs {
 	display: flex;
 	flex-direction: row;
+	flex-wrap: wrap;
 	justify-content: space-between;
 	align-items: center;
 }

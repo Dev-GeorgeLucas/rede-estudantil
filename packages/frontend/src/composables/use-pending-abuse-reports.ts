@@ -13,41 +13,52 @@ import { i18n } from '@/i18n.js';
 
 const monitor = createPendingAbuseReports({
 	query: async (session, signal) => (await misskeyApi('admin/abuse-user-reports', { state: 'unresolved', limit: 1 }, session.token, AbortSignal.any([signal, AbortSignal.timeout(15_000)]))).length > 0,
+	queryRules: async (session, signal) => (await misskeyApi('admin/note-reviews', { state: 'pending', limit: 1 }, session.token, AbortSignal.any([signal, AbortSignal.timeout(15_000)]))).length > 0,
 	isVisible: () => window.document.visibilityState === 'visible',
 	subscribe: invalidate => {
 		const stream = useStream();
 		const channel = stream.useChannel('admin');
 		channel.on('newAbuseUserReport', invalidate);
+		const rulesChanged = () => { invalidate(); globalEvents.emit('noteReviewsChanged'); };
+		channel.on('noteReviewCreated', rulesChanged);
+		channel.on('noteReviewResolved', rulesChanged);
 		stream.on('_connected_', invalidate);
 		globalEvents.on('abuseReportResolved', invalidate);
+		globalEvents.on('noteReviewResolved', invalidate);
 		return () => {
 			channel.off('newAbuseUserReport', invalidate);
+			channel.off('noteReviewCreated', rulesChanged);
+			channel.off('noteReviewResolved', rulesChanged);
 			channel.dispose();
 			stream.off('_connected_', invalidate);
 			globalEvents.off('abuseReportResolved', invalidate);
+			globalEvents.off('noteReviewResolved', invalidate);
 		};
 	},
 });
 
 let consumers = 0;
 let stop: (() => void) | undefined;
-let endingSession = false;
+let endingSession: { id: string; token: string } | null = null;
 
 export function usePendingAbuseReports() {
 	if (consumers++ === 0) {
-		const syncSession = () => monitor.setSession(endingSession ? null : $i);
+		const syncSession = () => {
+			if (endingSession && (endingSession.id !== $i?.id || endingSession.token !== $i?.token)) endingSession = null;
+			monitor.setSession(endingSession ? null : $i);
+		};
 		// Detached from the first consumer: a drawer can unmount while the shell remains.
 		const scope = effectScope(true);
-		scope.run(() => watch(() => [$i?.id, $i?.token, $i?.isAdmin, $i?.isModerator], (next, previous) => {
-			if (previous && (next[0] !== previous[0] || next[1] !== previous[1])) endingSession = false;
+		scope.run(() => watch(() => [$i?.id, $i?.token, $i?.isAdmin, $i?.isModerator], () => {
 			syncSession();
 		}, { immediate: true, flush: 'sync' }));
 		const endSession = () => {
-			endingSession = true;
+			endingSession = $i ? { id: $i.id, token: $i.token } : null;
 			monitor.dispose();
 		};
 		const resume = () => { syncSession(); monitor.invalidate(); };
 		globalEvents.on('accountChanging', endSession);
+		globalEvents.on('moderationAccessDenied', monitor.denySession);
 		window.document.addEventListener('visibilitychange', monitor.visibilityChanged);
 		window.addEventListener('focus', monitor.invalidate);
 		window.addEventListener('pagehide', monitor.dispose);
@@ -55,6 +66,7 @@ export function usePendingAbuseReports() {
 		stop = () => {
 			scope.stop();
 			globalEvents.off('accountChanging', endSession);
+			globalEvents.off('moderationAccessDenied', monitor.denySession);
 			window.document.removeEventListener('visibilitychange', monitor.visibilityChanged);
 			window.removeEventListener('focus', monitor.invalidate);
 			window.removeEventListener('pagehide', monitor.dispose);
@@ -66,12 +78,16 @@ export function usePendingAbuseReports() {
 		if (--consumers === 0) { stop?.(); stop = undefined; }
 	});
 
-	const label = computed(() => {
-		const parts = [i18n.ts.abuseReports];
-		if (monitor.state.pending) parts.push(i18n.ts.thereIsUnresolvedAbuseReportWarning);
-		if (monitor.state.error) parts.push(i18n.ts.abuseReportsUpdateFailed);
-		else if (monitor.state.pending === null) parts.push(i18n.ts.loading);
+	function queueLabel(title: string, pending: boolean | null, error: boolean) {
+		const parts = [title];
+		if (pending) parts.push(title === i18n.ts.abuseReports ? i18n.ts.thereIsUnresolvedAbuseReportWarning : i18n.ts._noteReview.pendingWarning);
+		if (error) parts.push(title === i18n.ts.abuseReports ? i18n.ts.abuseReportsUpdateFailed : i18n.ts._noteReview.updateFailed);
+		else if (pending === null) parts.push(i18n.ts.loading);
 		return parts.join(' — ');
-	});
-	return { state: monitor.state, label, refresh: monitor.invalidate };
+	}
+
+	const abuseLabel = computed(() => queueLabel(i18n.ts.abuseReports, monitor.state.abusePending, monitor.state.abuseError));
+	const ruleLabel = computed(() => queueLabel(i18n.ts._noteReview.title, monitor.state.rulePending, monitor.state.ruleError));
+	const label = computed(() => [abuseLabel.value, ruleLabel.value].join(' — '));
+	return { state: monitor.state, label, abuseLabel, ruleLabel, refresh: monitor.invalidate };
 }

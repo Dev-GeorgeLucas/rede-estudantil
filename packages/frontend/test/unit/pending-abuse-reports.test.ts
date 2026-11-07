@@ -18,11 +18,12 @@ function deferred<T>() {
 
 function setup() {
 	const query = vi.fn<(session: ModerationSession, signal: AbortSignal) => Promise<boolean>>().mockResolvedValue(false);
+	const queryRules = vi.fn().mockResolvedValue(false);
 	const dispose = vi.fn();
 	const subscribe = vi.fn(() => dispose);
 	let visible = true;
-	const monitor = createPendingAbuseReports({ query, subscribe, isVisible: () => visible });
-	return { monitor, query, subscribe, dispose, hide: () => { visible = false; monitor.visibilityChanged(); }, show: () => { visible = true; monitor.visibilityChanged(); } };
+	const monitor = createPendingAbuseReports({ query, queryRules, subscribe, isVisible: () => visible });
+	return { monitor, query, queryRules, subscribe, dispose, hide: () => { visible = false; monitor.visibilityChanged(); }, show: () => { visible = true; monitor.visibilityChanged(); } };
 }
 
 beforeEach(() => vi.useFakeTimers());
@@ -137,4 +138,71 @@ describe('pending abuse reports controller', () => {
 		monitor.dispose();
 		expect(vi.getTimerCount()).toBe(0);
 	});
+});
+
+describe('independent pending queues', () => {
+	test.each([[true, false], [false, true], [true, true], [false, false]])('abuse %s, rules %s', async (human, rules) => {
+		const { monitor, query, queryRules } = setup();
+		query.mockResolvedValue(human); queryRules.mockResolvedValue(rules);
+		monitor.setSession(moderator);
+		await vi.advanceTimersByTimeAsync(0);
+		expect(monitor.state).toMatchObject({ abusePending: human, rulePending: rules, pending: human || rules, error: false });
+		query.mockResolvedValue(false); queryRules.mockResolvedValue(false);
+		monitor.invalidate(); await vi.advanceTimersByTimeAsync(250);
+		expect(monitor.state.pending).toBe(false);
+		monitor.dispose();
+	});
+
+	test.each(['abuse', 'rule'] as const)('a failed %s query preserves its last result while the other queue updates', async failing => {
+		const { monitor, query, queryRules } = setup();
+		query.mockResolvedValue(true); queryRules.mockResolvedValue(true);
+		monitor.setSession(moderator); await vi.advanceTimersByTimeAsync(0);
+		const failed = failing === 'abuse' ? query : queryRules;
+		const successful = failing === 'abuse' ? queryRules : query;
+		failed.mockRejectedValue(new Error('offline')); successful.mockResolvedValue(false);
+		monitor.invalidate(); await vi.advanceTimersByTimeAsync(250);
+		expect(monitor.state.pending).toBe(true);
+		expect(monitor.state[`${failing}Pending`]).toBe(true);
+		expect(monitor.state.error).toBe(true);
+		failed.mockResolvedValue(false);
+		monitor.invalidate(); await vi.advanceTimersByTimeAsync(250);
+		expect(monitor.state).toMatchObject({ pending: false, error: false });
+		monitor.dispose();
+	});
+
+	test('an initial partial failure stays unknown; a confirmed pending queue still signals', async () => {
+		const { monitor, query, queryRules } = setup();
+		queryRules.mockRejectedValue(new Error('offline'));
+		monitor.setSession(moderator); await vi.advanceTimersByTimeAsync(0);
+		expect(monitor.state).toMatchObject({ pending: null, abusePending: false, rulePending: null, error: true });
+		query.mockResolvedValue(true); monitor.invalidate(); await vi.advanceTimersByTimeAsync(250);
+		expect(monitor.state).toMatchObject({ pending: true, error: true });
+		monitor.dispose();
+	});
+});
+
+test.each(['ROLE_PERMISSION_DENIED', 'AUTHENTICATION_FAILED', 'PERMISSION_DENIED'])('server %s removes administrative state even if the cached account still has its role', async code => {
+	const { monitor, query, queryRules, dispose } = setup();
+	query.mockResolvedValue(true); monitor.setSession(moderator); await vi.advanceTimersByTimeAsync(0);
+	queryRules.mockRejectedValue({ code }); monitor.invalidate(); await vi.advanceTimersByTimeAsync(250);
+	expect(monitor.state).toMatchObject({ authorized: false, pending: null, abusePending: null, rulePending: null });
+	expect(dispose).toHaveBeenCalledOnce();
+	const calls = query.mock.calls.length;
+	monitor.setSession(moderator); monitor.visibilityChanged(); monitor.invalidate();
+	await vi.advanceTimersByTimeAsync(120_000);
+	expect(query).toHaveBeenCalledTimes(calls);
+	monitor.setSession({ ...moderator, token: 'fresh-session' }); await vi.advanceTimersByTimeAsync(0);
+	expect(query.mock.calls.length).toBeGreaterThan(calls);
+	monitor.dispose();
+});
+
+test('repeated access denials keep the old session blocked across dispose/pageshow', async () => {
+	const { monitor, query, subscribe } = setup();
+	monitor.setSession(moderator); await vi.advanceTimersByTimeAsync(0);
+	monitor.denySession(); monitor.denySession(); monitor.dispose();
+	monitor.setSession(moderator); monitor.visibilityChanged();
+	await vi.advanceTimersByTimeAsync(120_000);
+	expect(monitor.state).toMatchObject({ authorized: false, pending: null });
+	expect(query).toHaveBeenCalledOnce();
+	expect(subscribe).toHaveBeenCalledOnce();
 });

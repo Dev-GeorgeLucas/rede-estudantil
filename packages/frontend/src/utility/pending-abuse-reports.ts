@@ -7,14 +7,30 @@ import { reactive, readonly } from 'vue';
 
 export type ModerationSession = { id: string; token: string; isAdmin?: boolean; isModerator?: boolean };
 
+export function isModerationAccessError(error: unknown): boolean {
+	return typeof error === 'object' && error !== null && 'code' in error &&
+		['ROLE_PERMISSION_DENIED', 'PERMISSION_DENIED', 'ACCESS_DENIED', 'AUTHENTICATION_FAILED', 'CREDENTIAL_REQUIRED'].includes(String(error.code));
+}
+
 // One controller per application, never persisted. Only retain existence, not report data.
 export function createPendingAbuseReports(deps: {
 	query: (session: ModerationSession, signal: AbortSignal) => Promise<boolean>;
+	queryRules: (session: ModerationSession, signal: AbortSignal) => Promise<boolean>;
 	subscribe: (invalidate: () => void) => () => void;
 	isVisible: () => boolean;
 }) {
-	const state = reactive({ authorized: false, pending: null as boolean | null, fetching: false, error: false });
+	const state = reactive({
+		authorized: false, fetching: false,
+		abusePending: null as boolean | null, rulePending: null as boolean | null,
+		abuseError: false, ruleError: false,
+		get pending(): boolean | null {
+			if (this.abusePending === true || this.rulePending === true) return true;
+			return this.abusePending === false && this.rulePending === false ? false : null;
+		},
+		get error() { return this.abuseError || this.ruleError; },
+	});
 	let session: ModerationSession | null = null;
+	let deniedSession: ModerationSession | null = null;
 	let generation = 0;
 	let revision = 0;
 	let request: AbortController | null = null;
@@ -40,13 +56,15 @@ export function createPendingAbuseReports(deps: {
 		request = controller;
 		state.fetching = true;
 		try {
-			const pending = await deps.query(session, controller.signal);
+			const results = await Promise.allSettled([deps.query(session, controller.signal), deps.queryRules(session, controller.signal)]);
 			if (generation === currentGeneration && revision === currentRevision) {
-				state.pending = pending;
-				state.error = false;
+				if (results.some(result => result.status === 'rejected' && isModerationAccessError(result.reason))) { denySession(); return; }
+				for (const [index, queue] of (['abuse', 'rule'] as const).entries()) {
+					const result = results[index];
+					state[`${queue}Error`] = result.status === 'rejected';
+					if (result.status === 'fulfilled') state[`${queue}Pending`] = result.value;
+				}
 			}
-		} catch {
-			if (generation === currentGeneration && revision === currentRevision) state.error = true;
 		} finally {
 			if (generation === currentGeneration) {
 				request = null;
@@ -64,7 +82,8 @@ export function createPendingAbuseReports(deps: {
 	}
 
 	function setSession(next: ModerationSession | null) {
-		const authorized = next && (next.isAdmin === true || next.isModerator === true) ? next : null;
+		if (deniedSession && next && ['id', 'token', 'isAdmin', 'isModerator'].some(key => next[key as keyof ModerationSession] !== deniedSession?.[key as keyof ModerationSession])) deniedSession = null;
+		const authorized = next && !deniedSession && (next.isAdmin === true || next.isModerator === true) ? next : null;
 		if (session?.id === authorized?.id && session?.token === authorized?.token) return;
 		generation++;
 		clearTimer();
@@ -73,11 +92,18 @@ export function createPendingAbuseReports(deps: {
 		unsubscribe?.();
 		unsubscribe = undefined;
 		session = authorized ? { ...authorized } : null;
-		Object.assign(state, { authorized: session !== null, pending: null, fetching: false, error: false });
+		Object.assign(state, { authorized: session !== null, abusePending: null, rulePending: null, fetching: false, abuseError: false, ruleError: false });
 		if (session) {
 			unsubscribe = deps.subscribe(invalidate);
 			void refresh();
 		}
+	}
+
+	function denySession() {
+		if (!session) return;
+		const previous = session;
+		setSession(null);
+		deniedSession = previous;
 	}
 
 	function visibilityChanged() {
@@ -85,5 +111,5 @@ export function createPendingAbuseReports(deps: {
 		if (deps.isVisible()) invalidate();
 	}
 
-	return { state: readonly(state), setSession, invalidate, visibilityChanged, dispose: () => setSession(null) };
+	return { state: readonly(state), setSession, denySession, invalidate, visibilityChanged, dispose: () => setSession(null) };
 }

@@ -50,6 +50,19 @@ SPDX-License-Identifier: AGPL-3.0-only
 					</MkFolder>
 				</SearchMarker>
 
+				<SearchMarker v-if="$i?.isAdmin" :keywords="['review', 'words']">
+					<MkFolder>
+						<template #icon><SearchIcon><i class="ti ti-flag"></i></SearchIcon></template>
+						<template #label><SearchLabel>{{ i18n.ts._noteReview.words }}</SearchLabel></template>
+						<div class="_gaps">
+							<label :for="reviewWordsId">{{ i18n.ts._noteReview.words }}</label>
+							<textarea :id="reviewWordsId" v-model="reviewWords" :disabled="savingReviewWords" :aria-describedby="`${reviewWordsId}-caption`" :class="$style.reviewWords" rows="6"></textarea>
+							<p :id="`${reviewWordsId}-caption`">{{ i18n.ts._noteReview.wordsDescription }}<br>{{ i18n.ts._noteReview.wordsLimits }}</p>
+							<MkButton primary :class="$style.reviewWordsAction" :disabled="savingReviewWords" @click="saveReviewWords">{{ i18n.ts.save }}</MkButton>
+						</div>
+					</MkFolder>
+				</SearchMarker>
+
 				<SearchMarker :keywords="['sensitive', 'words']">
 					<MkFolder>
 						<template #icon><SearchIcon><i class="ti ti-message-exclamation"></i></SearchIcon></template>
@@ -154,8 +167,10 @@ SPDX-License-Identifier: AGPL-3.0-only
 </template>
 
 <script lang="ts" setup>
-import { ref, computed } from 'vue';
+import { ref, computed, useId, watch } from 'vue';
 import * as Misskey from 'misskey-js';
+import { $i } from '@/i.js';
+import { useGlobalEvent } from '@/events.js';
 import XServerRules from './server-rules.vue';
 import MkSwitch from '@/components/MkSwitch.vue';
 import MkInput from '@/components/MkInput.vue';
@@ -186,6 +201,26 @@ const {
 	],
 	initialValue: meta.ugcVisibilityForVisitor,
 });
+const reviewWordsId = useId();
+const reviewWords = ref(meta.reviewWords.join('\n'));
+const savingReviewWords = ref(false);
+watch(() => [$i?.id, $i?.token, $i?.isAdmin], (next, previous) => {
+	if (!next[2] || (previous && (next[0] !== previous[0] || next[1] !== previous[1]))) reviewWords.value = '';
+}, { immediate: true, flush: 'sync' });
+useGlobalEvent('accountChanging', () => { reviewWords.value = ''; });
+
+async function saveReviewWords() {
+	if (savingReviewWords.value) return;
+	savingReviewWords.value = true;
+	try {
+		await os.apiWithDialog('admin/update-meta', { reviewWords: reviewWords.value.split('\n') });
+	} catch {
+		// apiWithDialog already reports the error; retain the draft for correction/retry.
+	} finally {
+		savingReviewWords.value = false;
+	}
+}
+
 const sensitiveWords = ref(meta.sensitiveWords.join('\n'));
 const prohibitedWords = ref(meta.prohibitedWords.join('\n'));
 const prohibitedWordsForNameOfUser = ref(meta.prohibitedWordsForNameOfUser.join('\n'));
@@ -300,3 +335,13 @@ definePage(() => ({
 	icon: 'ti ti-shield',
 }));
 </script>
+
+<style module lang="scss">
+.reviewWordsAction { min-height: 44px; }
+.reviewWords {
+	width: 100%; box-sizing: border-box; padding: 12px; min-height: 44px;
+	font: inherit; color: var(--MI_THEME-fg); background: var(--MI_THEME-panel);
+	border: 1px solid var(--MI_THEME-divider); border-radius: var(--MI-radius); resize: vertical;
+	&:focus-visible { outline: 2px solid var(--MI_THEME-focus); outline-offset: 2px; }
+}
+</style>

@@ -485,6 +485,15 @@ export type paths = {
          */
         post: operations['admin___meta'];
     };
+    '/admin/note-reviews': {
+        /**
+         * admin/note-reviews
+         * @description No description provided.
+         *
+         *     **Credential required**: *Yes* / **Permission**: *read:admin:abuse-user-reports*
+         */
+        post: operations['admin___note-reviews'];
+    };
     '/admin/promo/create': {
         /**
          * admin/promo/create
@@ -664,6 +673,15 @@ export type paths = {
          *     **Credential required**: *Yes* / **Permission**: *write:admin:resolve-abuse-user-report*
          */
         post: operations['admin___resolve-abuse-user-report'];
+    };
+    '/admin/resolve-note-review': {
+        /**
+         * admin/resolve-note-review
+         * @description No description provided.
+         *
+         *     **Credential required**: *Yes* / **Permission**: *write:admin:resolve-abuse-user-report*
+         */
+        post: operations['admin___resolve-note-review'];
     };
     '/admin/roles/assign': {
         /**
@@ -9634,6 +9652,98 @@ export interface operations {
             };
         };
     };
+    'admin___note-reviews': {
+        requestBody: {
+            content: {
+                'application/json': {
+                    /** @default 10 */
+                    limit?: number;
+                    caseIds?: string[];
+                    /** Format: misskey:id */
+                    sinceId?: string;
+                    /** Format: misskey:id */
+                    untilId?: string;
+                    /**
+                     * @default pending
+                     * @enum {string}
+                     */
+                    state?: 'pending' | 'resolved' | 'all';
+                };
+            };
+        };
+        responses: {
+            /** @description OK (with results) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    'application/json': {
+                        /** Format: id */
+                        id: string;
+                        /** Format: id */
+                        noteId: string | null;
+                        /** Format: date-time */
+                        createdAt: string;
+                        matchedWords: string[];
+                        /** @enum {string} */
+                        state: 'pending' | 'resolved';
+                        /** Format: id */
+                        resolvedById: string | null;
+                        /** Format: date-time */
+                        resolvedAt: string | null;
+                        /** @enum {string|null} */
+                        resolution: 'falsePositive' | 'reviewed' | 'unavailable' | null;
+                    }[];
+                };
+            };
+            /** @description Client error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    'application/json': components['schemas']['Error'];
+                };
+            };
+            /** @description Authentication error */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    'application/json': components['schemas']['Error'];
+                };
+            };
+            /** @description Forbidden error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    'application/json': components['schemas']['Error'];
+                };
+            };
+            /** @description I'm Ai */
+            418: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    'application/json': components['schemas']['Error'];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    'application/json': components['schemas']['Error'];
+                };
+            };
+        };
+    };
     admin___promo___create: {
         requestBody: {
             content: {
@@ -10923,6 +11033,91 @@ export interface operations {
             204: {
                 headers: {
                     [name: string]: unknown;
+                };
+            };
+            /** @description Client error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    'application/json': components['schemas']['Error'];
+                };
+            };
+            /** @description Authentication error */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    'application/json': components['schemas']['Error'];
+                };
+            };
+            /** @description Forbidden error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    'application/json': components['schemas']['Error'];
+                };
+            };
+            /** @description I'm Ai */
+            418: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    'application/json': components['schemas']['Error'];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    'application/json': components['schemas']['Error'];
+                };
+            };
+        };
+    };
+    'admin___resolve-note-review': {
+        requestBody: {
+            content: {
+                'application/json': {
+                    /** Format: misskey:id */
+                    caseId: string;
+                    /** @enum {string} */
+                    resolution: 'falsePositive' | 'reviewed' | 'unavailable';
+                };
+            };
+        };
+        responses: {
+            /** @description OK (with results) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    'application/json': {
+                        /** Format: id */
+                        id: string;
+                        /** Format: id */
+                        noteId: string | null;
+                        /** Format: date-time */
+                        createdAt: string;
+                        matchedWords: string[];
+                        /** @enum {string} */
+                        state: 'pending' | 'resolved';
+                        /** Format: id */
+                        resolvedById: string | null;
+                        /** Format: date-time */
+                        resolvedAt: string | null;
+                        /** @enum {string|null} */
+                        resolution: 'falsePositive' | 'reviewed' | 'unavailable' | null;
+                        alreadyResolved: boolean;
+                    };
                 };
             };
             /** @description Client error */

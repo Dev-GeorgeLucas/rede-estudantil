@@ -150,6 +150,8 @@ export interface RoleTimelineEventTypes {
 }
 
 export interface AdminEventTypes {
+	noteReviewCreated: Record<string, never>;
+	noteReviewResolved: Record<string, never>;
 	newAbuseUserReport: {
 		id: MiAbuseUserReport['id'];
 		targetUserId: MiUser['id'],

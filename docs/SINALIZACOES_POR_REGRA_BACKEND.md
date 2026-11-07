@@ -1,6 +1,9 @@
 # Sinalizações por regra: configuração e persistência
 
-Esta entrega implementa somente o backend. Os casos ficam persistidos em
+Este documento registra a primeira entrega, integrada no PR #15. A entrega
+seguinte está descrita em [Revisão das sinalizações por regra](REVISAO_SINALIZACOES_POR_REGRA.md).
+
+Na primeira entrega, foi implementado somente o backend. Os casos ficam persistidos em
 `note_review`; não há tela, endpoint de listagem/resolução nem ampliação do
 indicador de denúncias. Não se trata de uma denúncia humana e não existe
 atribuição a denunciante.
