@@ -18,3 +18,10 @@ Não há requisições a serviços de fontes externos em runtime.
 Ambas são distribuídas sob SIL Open Font License 1.1. As licenças e os créditos
 originais estão em `montserrat-OFL.txt` e `opensans-OFL.txt`. Esses arquivos não
 são licenciados como AGPL.
+
+As fontes e os avisos de licença têm uma única origem versionada em
+`packages/frontend-shared/assets/fonts/ifeed-v1/`. As URLs em
+`frontend-shared/ifeed-fonts.scss` são relativas ao próprio SCSS. O Vite resolve
+esses arquivos para cada consumidor e emite os WOFF2 com hash em seus artefatos,
+sob `/vite/assets/` ou `/embed_vite/assets/` na produção. Os aliases genéricos
+`/client-assets/` e os assets exclusivos de cada frontend não são alterados.

@@ -9,9 +9,9 @@ html.useSystemFont { --MI-fontHeading: system-ui; }
 
 @font-face {
 	font-family: 'IFEED Open Sans'; font-style: normal; font-weight: 400 600;
-	font-display: swap; src: url('/client-assets/fonts/ifeed-v1/opensans.woff2') format('woff2');
+	font-display: swap; src: url('./assets/fonts/ifeed-v1/opensans.woff2') format('woff2');
 }
 @font-face {
 	font-family: 'IFEED Montserrat'; font-style: normal; font-weight: 700 800;
-	font-display: swap; src: url('/client-assets/fonts/ifeed-v1/montserrat.woff2') format('woff2');
+	font-display: swap; src: url('./assets/fonts/ifeed-v1/montserrat.woff2') format('woff2');
 }

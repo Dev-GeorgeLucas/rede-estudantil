@@ -59,7 +59,7 @@ barras laterais não foram redesenhados.
 
 Montserrat 700–800 para títulos e Open Sans 400–600 para texto são WOFF2 locais,
 com `font-display: swap`, créditos e SIL OFL 1.1 ao lado dos arquivos em
-`frontend/assets/fonts/ifeed-v1/`. O cabeçalho de página usa a família de títulos.
+`frontend-shared/assets/fonts/ifeed-v1/`. O cabeçalho de página usa a família de títulos.
 Fallbacks, escolha de fonte do sistema, fontes monoespaçadas e emojis permanecem.
 As letras da assinatura não usam essas fontes em runtime: são paths extraídos.
 A origem e o commit das fontes constam no README dessa pasta.
@@ -78,9 +78,11 @@ O logotipo não recebe sombra, borda ou distorção. Ícones de ações permanec
 seus significados. O ponto vermelho é estático, parte do arquivo da marca; não
 está ligado ao indicador de notificações ou de moderação.
 
-Os assets novos usam `/static-assets/ifeed-v1/`, fontes usam
-`/client-assets/fonts/ifeed-v1/` e o link do manifest usa `?v=ifeed-v1`. Isso evita
-reutilizar as URLs anteriormente cacheadas por sete dias. As rotas de compatibilidade
+Os assets de marca novos usam `/static-assets/ifeed-v1/`. As fontes têm origem
+única em `frontend-shared/assets/fonts/ifeed-v1/`, referenciada por URLs relativas
+ao SCSS compartilhado. O Vite emite os WOFF2 com hash sob `/vite/assets/` e
+`/embed_vite/assets/`, conforme o consumidor. O link do manifest usa
+`?v=ifeed-v1`. Os caminhos e hashes evitam reutilizar URLs antigas em cache. As rotas de compatibilidade
 `/favicon.ico` e `/apple-touch-icon.png` servem os arquivos novos com revalidação.
 O manifest mantém seu cache de cinco minutos, compartilhamento e atalho de modo
 seguro. Há PNGs transparentes e composições maskable distintas (192/512), Apple
@@ -243,11 +245,11 @@ Lista de fontes e assets da tarefa (inclui os novos que ainda não aparecem em
 - `packages/frontend-shared/js/default-theme.ts` (novo)
 - `packages/frontend-shared/themes/d-ifeed.json5` (novo)
 - `packages/frontend-shared/themes/l-ifeed.json5` (novo)
-- `packages/frontend/assets/fonts/ifeed-v1/README.md` (novo)
-- `packages/frontend/assets/fonts/ifeed-v1/montserrat-OFL.txt` (novo)
-- `packages/frontend/assets/fonts/ifeed-v1/montserrat.woff2` (novo)
-- `packages/frontend/assets/fonts/ifeed-v1/opensans-OFL.txt` (novo)
-- `packages/frontend/assets/fonts/ifeed-v1/opensans.woff2` (novo)
+- `packages/frontend-shared/assets/fonts/ifeed-v1/README.md` (novo)
+- `packages/frontend-shared/assets/fonts/ifeed-v1/montserrat-OFL.txt` (novo)
+- `packages/frontend-shared/assets/fonts/ifeed-v1/montserrat.woff2` (novo)
+- `packages/frontend-shared/assets/fonts/ifeed-v1/opensans-OFL.txt` (novo)
+- `packages/frontend-shared/assets/fonts/ifeed-v1/opensans.woff2` (novo)
 - `packages/frontend/src/components/MkBrandLogo.stories.impl.ts` (novo)
 - `packages/frontend/src/components/MkBrandLogo.vue` (novo)
 - `packages/frontend/src/utility/watch-theme.ts` (novo)
@@ -346,3 +348,65 @@ O primeiro check do staging detectou um espaço final no aviso OFL da Montserrat
 que ainda era um arquivo não rastreado. Foi removido somente esse espaço, sem
 alterar texto, créditos ou termos da licença. Não houve mudança de código após
 as validações finais; os checks do staging foram repetidos antes do commit.
+
+
+## Correção da resolução de fontes no PR #17
+
+O primeiro CI de produção falhou antes dos testes com `ENOENT` no embed:
+`/client-assets/` resolve para a pasta de assets de cada frontend, mas os WOFF2
+estavam somente em `frontend/assets/`. Os builds de desenvolvimento e os
+typechecks não detectaram a resolução incorreta de arquivos no build do embed.
+
+Os cinco arquivos de fontes/documentação/licenças foram movidos para uma origem
+compartilhada versionada, com os WOFF2 e licenças preservados byte a byte. As duas
+URLs do SCSS agora são relativas à origem compartilhada; o mecanismo de assets do
+Vite faz a emissão para cada build, sem cópia manual ou mudança do alias inteiro
+do embed. Pesos, famílias, `font-display`, fallbacks e preferência de fonte do
+sistema não mudaram. Consumidores diretos: os SCSS principais de frontend e
+frontend-embed; o Storybook importa o estilo principal do frontend.
+
+A validação usa a configuração fictícia versionada do CI por caminho temporário,
+sem sobrescrever `.config/default.yml`, iniciar a instância ou consultar o banco.
+Não foram reexecutados jobs remotos. Os resultados desta correção são registrados
+ao terminar sua validação local.
+
+Resultados locais da correção de fontes:
+
+- Build isolado: `NODE_ENV=production pnpm --filter frontend-embed build`, aprovado.
+- Build completo: `NODE_ENV=production pnpm build`, o comando do workflow de
+  produção, aprovado. Foi usado `MISSKEY_CONFIG_YML` apontando para uma cópia
+  temporária da configuração fictícia versionada do CI. O lockfile não mudou.
+- Suíte completa: `TZ=UTC pnpm --filter frontend test-and-coverage`, aprovada com
+  **561 testes em 47 suítes**, cobertura e concorrência padrão do CI, sem
+  `--maxWorkers` ou ajustes de timeout. Não ocorreu timeout do Chat nesta execução;
+  isso não elimina a intermitência observada na etapa anterior.
+- Artefatos: **49 asserções** com os CSS/WOFF2 realmente gerados. Os dois CSS
+  referenciam suas próprias URLs com hash sob `/vite/assets/` e
+  `/embed_vite/assets/`; os WOFF2 são idênticos aos fontes compartilhados.
+  As dez requisições HTTP do ensaio responderam 200, e o Chromium carregou
+  Open Sans 400/600 e Montserrat 700/800 em ambos os consumidores. Nenhuma URL
+  de fonte depende de CDN, do alias antigo ou do caminho da máquina.
+- O ensaio HTTP serviu somente arquivos de produção em loopback temporário;
+  não iniciou o backend nem fez consultas a banco, contas ou configurações reais.
+  O navegador e o servidor temporários foram encerrados após as asserções.
+- Os builds de produção do SDK e dos jogos omitem `.d.ts` por projeto. A primeira
+  tentativa de typecheck depois de `NODE_ENV=production pnpm build` apontou as
+  declarações ausentes. Foram preparadas as dependências com
+  `NODE_ENV=test pnpm --filter 'frontend^...' run build`, seguindo a etapa do
+  workflow de lint/typecheck, para gerar as declarações locais. Os arquivos de
+  build ignorados não alteram SDK versionado, contratos ou tipos autogerados da API.
+- Lint direcionado: sem arquivos nos padrões ESLint alterados (SCSS, documentos
+  e assets). SPDX e locale safety aprovados; nenhum verificador, teste ou
+  configuração de concorrência do CI foi alterado.
+
+A origem compartilhada é consumida pelos builds de frontend e frontend-embed;
+o Storybook recebe o mesmo SCSS pelo preview. O Storybook completo não foi
+executado nesta correção. A instalação/atualização real de PWA e a execução remota
+do CI continuam pendentes até um futuro envio, não realizado nesta etapa.
+
+Após preparar as dependências de typecheck, os três checks (`frontend`,
+`frontend-embed` e `frontend-shared`) passaram. SPDX, locale safety e
+`git diff --check` também passaram. As falhas preliminares de typecheck eram a
+falta das declarações locais omitidas no build de produção; não exigiram mudanças
+em código, tipos versionados ou testes. Não houve commit, push, merge, execução de
+migrations ou alteração da instância real nesta correção.
