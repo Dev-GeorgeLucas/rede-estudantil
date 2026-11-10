@@ -9,7 +9,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 		<div class="_spacer" style="--MI_SPACER-w: 700px; --MI_SPACER-min: 16px;">
 			<div class="lxpfedzu _gaps">
 				<div class="banner">
-					<img :src="instance.iconUrl || '/favicon.ico'" alt="" class="icon"/>
+					<img :src="instance.iconUrl || brand.symbol" alt="" class="icon"/>
 				</div>
 
 				<div class="_gaps_s">
@@ -31,6 +31,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 </template>
 
 <script lang="ts" setup>
+import { brand } from '@@/js/branding.js';
 import { onActivated, onMounted, onUnmounted, provide, watch, ref, computed } from 'vue';
 import type { SuperMenuDef } from '@/components/MkSuperMenu.vue';
 import type { PageMetadata } from '@/page.js';

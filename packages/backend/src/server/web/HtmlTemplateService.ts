@@ -157,7 +157,7 @@ export class HtmlTemplateService {
 			version: this.config.version,
 			config: this.config,
 			langs: [...languages],
-			instanceName: this.meta.name ?? 'Misskey',
+			instanceName: this.meta.name ?? 'IFEED',
 			icon: this.meta.iconUrl,
 			appleTouchIcon: this.meta.app512IconUrl,
 			themeColor: this.meta.themeColor,

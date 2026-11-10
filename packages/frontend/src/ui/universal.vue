@@ -23,18 +23,16 @@ SPDX-License-Identifier: AGPL-3.0-only
 			<XMobileFooterMenu v-if="isMobile" ref="navFooter" v-model:drawerMenuShowing="drawerMenuShowing" v-model:widgetsShowing="widgetsShowing"/>
 		</div>
 
-		<div v-if="showWidgetsSide && !pageMetadata?.needWideArea" :class="$style.widgets">
-			<XWidgets/>
-		</div>
+		<aside v-if="showWidgetsSide" ref="widgetsContainer" :class="$style.widgets" :aria-label="i18n.ts.widgets"></aside>
 	</div>
 
-	<XCommon v-model:drawerMenuShowing="drawerMenuShowing" v-model:widgetsShowing="widgetsShowing"/>
+	<XCommon v-model:drawerMenuShowing="drawerMenuShowing" v-model:widgetsShowing="widgetsShowing" :widgetsContainer="widgetsContainer"/>
 </div>
 </template>
 
 <script lang="ts" setup>
 import { isMvpFeatureVisible } from '@/mvp-visibility.js';
-import { defineAsyncComponent, provide, onMounted, computed, ref } from 'vue';
+import { defineAsyncComponent, provide, computed, ref, useTemplateRef, onBeforeUnmount } from 'vue';
 import { instanceName } from '@@/js/config.js';
 import { isLink } from '@@/js/is-link.js';
 import XCommon from './_common_/common.vue';
@@ -57,26 +55,19 @@ import { prefer } from '@/preferences.js';
 import { shouldSuggestRestoreBackup } from '@/preferences/utility.js';
 import { DI } from '@/di.js';
 import { shouldSuggestReload } from '@/utility/reload-suggest.js';
+import { useWidgetLayout } from '@/composables/use-widget-layout.js';
 
-const XWidgets = defineAsyncComponent(() => import('./_common_/widgets.vue'));
+const widgetsContainer = useTemplateRef('widgetsContainer');
 const XStatusBars = defineAsyncComponent(() => import('@/ui/_common_/statusbars.vue'));
 const XAnnouncements = defineAsyncComponent(() => import('@/ui/_common_/announcements.vue'));
 
 const isRoot = computed(() => mainRouter.currentRoute.value.name === 'index');
 
-const DESKTOP_THRESHOLD = 1100;
-const MOBILE_THRESHOLD = 500;
-
-// デスクトップでウィンドウを狭くしたときモバイルUIが表示されて欲しいことはあるので deviceKind === 'desktop' の判定は行わない
-const showWidgetsSide = window.innerWidth >= DESKTOP_THRESHOLD;
-
-const isMobile = ref(deviceKind === 'smartphone' || window.innerWidth <= MOBILE_THRESHOLD);
-window.addEventListener('resize', () => {
-	isMobile.value = deviceKind === 'smartphone' || window.innerWidth <= MOBILE_THRESHOLD;
-});
-
 const pageMetadata = ref<null | PageMetadata>(null);
-const widgetsShowing = ref(false);
+const { isMobile, showWidgetsSide, widgetsShowing } = useWidgetLayout(
+	() => deviceKind === 'smartphone',
+	() => pageMetadata.value?.needWideArea === true,
+);
 
 provide(DI.router, mainRouter);
 provideMetadataReceiver((metadataGetter) => {
@@ -94,9 +85,9 @@ provideReactiveMetadata(pageMetadata);
 
 const drawerMenuShowing = ref(false);
 
-mainRouter.on('change', () => {
-	drawerMenuShowing.value = false;
-});
+const onRouteChange = () => { drawerMenuShowing.value = false; };
+mainRouter.on('change', onRouteChange);
+onBeforeUnmount(() => mainRouter.off('change', onRouteChange));
 
 if (isMvpFeatureVisible('deck') && window.innerWidth > 1024) {
 	const tempUI = miLocalStorage.getItem('ui_temp');
@@ -126,8 +117,6 @@ function onContextmenu(ev: PointerEvent) {
 </script>
 
 <style lang="scss" module>
-$widgets-hide-threshold: 1090px;
-
 .root {
 	height: 100dvh;
 	overflow: clip;
@@ -173,16 +162,15 @@ $widgets-hide-threshold: 1090px;
 }
 
 .widgets {
+	flex: 0 0 350px;
 	width: 350px;
 	height: 100%;
+	min-height: 0;
+	overscroll-behavior: contain;
 	box-sizing: border-box;
 	overflow: auto;
 	padding: var(--MI-margin) var(--MI-margin) calc(var(--MI-margin) + env(safe-area-inset-bottom, 0px));
 	border-left: solid 0.5px var(--MI_THEME-divider);
 	background: var(--MI_THEME-bg);
-
-	@media (max-width: $widgets-hide-threshold) {
-		display: none;
-	}
 }
 </style>

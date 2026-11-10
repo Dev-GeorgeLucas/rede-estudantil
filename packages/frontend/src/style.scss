@@ -6,6 +6,8 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
+@use '../../frontend-shared/ifeed-fonts.scss';
+
 :root {
 	--MI-radius: 12px;
 	--MI-marginFull: 16px;
@@ -25,7 +27,7 @@
 html {
 	overflow: auto;
 	overflow-wrap: break-word;
-	font-family: 'Hiragino Maru Gothic Pro', "BIZ UDGothic", Roboto, HelveticaNeue, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+	font-family: 'IFEED Open Sans', 'Hiragino Maru Gothic Pro', "BIZ UDGothic", Roboto, HelveticaNeue, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 	font-size: 14px;
 	line-height: 1.35;
 	text-size-adjust: 100%;
@@ -753,4 +755,9 @@ html[data-color-scheme=dark] ._woodenFrame {
 @keyframes mfm-rainbow {
 	0% { filter: hue-rotate(0deg) contrast(150%) saturate(150%); }
 	100% { filter: hue-rotate(360deg) contrast(150%) saturate(150%); }
+}
+
+html:not(.useSystemFont) :is(h1, h2, h3, h4, h5, h6) {
+	font-family: var(--MI-fontHeading);
+	font-weight: 700;
 }

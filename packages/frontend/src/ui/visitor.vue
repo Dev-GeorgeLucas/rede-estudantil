@@ -16,7 +16,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 
 	<div :class="$style.main">
 		<div v-if="narrow && !isRoot" :class="$style.header">
-			<img :src="instance.iconUrl || '/favicon.ico'" alt="" :class="$style.headerIcon"/>
+			<img :src="instance.iconUrl || brand.symbol" alt="" :class="$style.headerIcon"/>
 			<MkA to="/" :class="$style.headerTitle">{{ instanceName }}</MkA>
 			<MkButton primary rounded :class="$style.headerButton" @click="goHome">{{ i18n.ts.signup }}</MkButton>
 		</div>
@@ -29,6 +29,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 </template>
 
 <script lang="ts" setup>
+import { brand } from '@@/js/branding.js';
 import { onMounted, provide, ref, computed } from 'vue';
 import { instanceName } from '@@/js/config.js';
 import XCommon from './_common_/common.vue';

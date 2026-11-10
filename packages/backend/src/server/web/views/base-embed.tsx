@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
+import { brandAssets, defaultThemeColor } from '../branding.js';
 import { comment } from '@/server/web/views/_.js';
 import type { CommonProps } from '@/server/web/views/_.js';
 import { Splash } from '@/server/web/views/_splash.js';
@@ -35,16 +36,16 @@ export function BaseEmbed(props: PropsWithChildren<CommonProps<{
 			<html>
 				<head>
 					<meta charset="UTF-8" />
-					<meta name="application-name" content="Misskey" />
+					<meta name="application-name" content={props.instanceName || 'IFEED'} />
 					<meta name="referer" content="origin" />
-					<meta name="theme-color" content={props.themeColor ?? '#86b300'} />
-					<meta name="theme-color-orig" content={props.themeColor ?? '#86b300'} />
-					<meta property="og:site_name" content={props.instanceName || 'Misskey'} />
+					<meta name="theme-color" content={props.themeColor ?? defaultThemeColor} />
+					<meta name="theme-color-orig" content={props.themeColor ?? defaultThemeColor} />
+					<meta property="og:site_name" content={props.instanceName || 'IFEED'} />
 					<meta property="instance_url" content={props.instanceUrl} />
 					<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
 					<meta name="format-detection" content="telephone=no,date=no,address=no,email=no,url=no" />
-					<link rel="icon" href={props.icon ?? '/favicon.ico'} />
-					<link rel="apple-touch-icon" href={props.appleTouchIcon ?? '/apple-touch-icon.png'} />
+					<link rel="icon" href={props.icon || brandAssets.favicon} />
+					<link rel="apple-touch-icon" href={props.appleTouchIcon || brandAssets.appleTouch} />
 
 					{props.frontendEmbedViteFiles == null ? <script type="module" src="/embed_vite/@vite/client"></script> : null}
 
@@ -52,7 +53,7 @@ export function BaseEmbed(props: PropsWithChildren<CommonProps<{
 						<link rel="stylesheet" href={`/embed_vite/${href}`} />
 					))}
 
-					{props.titleSlot ?? <title safe>{props.title || 'Misskey'}</title>}
+					{props.titleSlot ?? <title safe>{props.title || 'IFEED'}</title>}
 
 					{props.metaSlot}
 

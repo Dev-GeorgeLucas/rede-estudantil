@@ -6,7 +6,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 <template>
 <div :class="$style.root">
 	<div :class="$style.title">
-		<img :src="instance.iconUrl || '/favicon.ico'" alt="" :class="$style.instanceIcon"/>
+		<img :src="instance.iconUrl || brand.symbol" alt="" :class="$style.instanceIcon"/>
 		<span :class="$style.instanceTitle">{{ instance.name ?? host }}</span>
 	</div>
 	<div :class="$style.controls">
@@ -20,6 +20,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 </template>
 
 <script lang="ts" setup>
+import { brand } from '@@/js/branding.js';
 import { host } from '@@/js/config.js';
 import { ref } from 'vue';
 import { instance } from '@/instance.js';
@@ -34,7 +35,7 @@ function goBack() {
 
 <style lang="scss" module>
 .root {
-	--height: 36px;
+	--height: 48px;
 
 	background: var(--MI_THEME-navBg);
 	height: var(--height);
@@ -61,7 +62,7 @@ function goBack() {
 
 .instanceIcon {
 	display: inline-block;
-	width: 20px;
+	width: 38px;
 	aspect-ratio: 1;
 	border-radius: 5px;
 	margin-right: 8px;

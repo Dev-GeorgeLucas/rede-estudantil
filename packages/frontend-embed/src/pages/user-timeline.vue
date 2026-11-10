@@ -25,7 +25,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 				<a :href="url" :class="$style.instanceIconLink" target="_blank" rel="noopener noreferrer">
 					<img
 						:class="$style.instanceIcon"
-						:src="serverMetadata.iconUrl || '/favicon.ico'"
+						:src="serverMetadata.iconUrl || brand.symbol"
 					/>
 				</a>
 			</div>
@@ -45,6 +45,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 </template>
 
 <script setup lang="ts">
+import { brand } from '@@/js/branding.js';
 import { ref, computed, inject, useTemplateRef } from 'vue';
 import * as Misskey from 'misskey-js';
 import { url, instanceName } from '@@/js/config.js';

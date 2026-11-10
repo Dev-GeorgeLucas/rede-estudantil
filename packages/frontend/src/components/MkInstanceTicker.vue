@@ -11,6 +11,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 </template>
 
 <script lang="ts" setup>
+import { brand } from '@@/js/branding.js';
 import { iAmModerator } from '@/i.js';
 import { computed } from 'vue';
 import { instanceName as localInstanceName } from '@@/js/config.js';
@@ -34,7 +35,7 @@ const faviconUrl = computed(() => {
 	let imageSrc: string | null = null;
 	if (props.host == null) {
 		if (localInstance.iconUrl == null) {
-			return '/favicon.ico';
+			return brand.symbol;
 		} else {
 			imageSrc = localInstance.iconUrl;
 		}

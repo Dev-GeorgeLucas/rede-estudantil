@@ -279,6 +279,7 @@ onUnmounted(() => {
 }
 
 .title {
+	font-family: var(--MI-fontHeading);
 	min-width: 0;
 	line-height: 1.1;
 }

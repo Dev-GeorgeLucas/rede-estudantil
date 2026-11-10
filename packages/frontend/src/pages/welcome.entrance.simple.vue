@@ -7,8 +7,8 @@ SPDX-License-Identifier: AGPL-3.0-only
 <div v-if="meta" :class="$style.root">
 	<MkFeaturedPhotos :class="$style.bg"/>
 	<div :class="$style.logoWrapper">
-		<div :class="$style.poweredBy">Powered by</div>
-		<img :src="misskeysvg" :class="$style.misskey"/>
+		<MkBrandLogo :class="$style.logo"/>
+		<div :class="$style.poweredBy">Powered by <a href="https://misskey-hub.net/" target="_blank" rel="noopener noreferrer">Misskey</a></div>
 	</div>
 	<div :class="$style.contents">
 		<MkVisitorDashboard/>
@@ -18,7 +18,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 
 <script lang="ts" setup>
 import MkFeaturedPhotos from '@/components/MkFeaturedPhotos.vue';
-import misskeysvg from '/client-assets/misskey.svg';
+import MkBrandLogo from '@/components/MkBrandLogo.vue';
 import MkVisitorDashboard from '@/components/MkVisitorDashboard.vue';
 import { instance as meta } from '@/instance.js';
 </script>
@@ -45,20 +45,22 @@ import { instance as meta } from '@/instance.js';
 	top: 36px;
 	left: 36px;
 	flex: auto;
-	color: #fff;
+	color: var(--MI_THEME-fg);
+	background: var(--MI_THEME-panel);
+	border-radius: var(--MI-radius);
 	user-select: none;
-	pointer-events: none;
 }
 
 .poweredBy {
-	margin-bottom: 2px;
+	padding: 0 16px 12px;
+	font-size: 0.8em;
 }
 
-.misskey {
-	width: 120px;
+.logo {
+	width: 180px;
 
 	@media (max-width: 450px) {
-		width: 100px;
+		width: 140px;
 	}
 }
 
@@ -66,6 +68,6 @@ import { instance as meta } from '@/instance.js';
 	position: relative;
 	width: min(430px, calc(100% - 32px));
 	margin: auto;
-	padding: 100px 0 100px 0;
+	padding: 156px 0 100px 0;
 }
 </style>

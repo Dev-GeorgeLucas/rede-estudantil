@@ -35,6 +35,8 @@ export const themeProps = Object.keys(lightTheme.props).filter(key => !key.start
 
 export const getBuiltinThemes = () => Promise.all(
 	[
+		'l-ifeed',
+		'd-ifeed',
 		'l-light',
 		'l-coffee',
 		'l-apricot',

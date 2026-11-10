@@ -10,7 +10,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 			<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="z-index:1;position:relative" viewBox="0 0 854 300">
 				<defs>
 					<linearGradient id="linear" x1="0%" y1="0%" x2="100%" y2="0%">
-						<stop offset="0%" stop-color="#86b300"/><stop offset="100%" stop-color="#4ab300"/>
+						<stop offset="0%" stop-color="var(--MI_THEME-buttonGradateA)"/><stop offset="100%" stop-color="var(--MI_THEME-buttonGradateB)"/>
 					</linearGradient>
 				</defs>
 
@@ -44,7 +44,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 				</g>
 			</svg>
 			<div :class="$style.title">
-				<div>Welcome to Misskey!</div>
+				<div>{{ brand.name }}</div>
 				<div :class="$style.version">v{{ version }}</div>
 			</div>
 			<div style="padding: 16px 32px 32px 32px;">
@@ -125,6 +125,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 
 <script lang="ts" setup>
 import { ref } from 'vue';
+import { brand } from '@@/js/branding.js';
 import { host, version } from '@@/js/config.js';
 import MkButton from '@/components/MkButton.vue';
 import MkInput from '@/components/MkInput.vue';
@@ -223,7 +224,7 @@ function finish() {
 	font-size: 1.5em;
 	text-align: center;
 	padding: 32px;
-	color: #fff;
+	color: var(--MI_THEME-fg);
 	font-weight: bold;
 }
 

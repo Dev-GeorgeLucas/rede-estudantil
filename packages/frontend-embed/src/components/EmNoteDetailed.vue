@@ -50,7 +50,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 					</div>
 					<div :class="$style.noteHeaderInfo">
 						<a :href="url" :class="$style.noteHeaderInstanceIconLink" target="_blank" rel="noopener noreferrer">
-							<img :src="serverMetadata.iconUrl || '/favicon.ico'" alt="" :class="$style.noteHeaderInstanceIcon"/>
+							<img :src="serverMetadata.iconUrl || brand.symbol" alt="" :class="$style.noteHeaderInstanceIcon"/>
 						</a>
 					</div>
 				</div>
@@ -126,6 +126,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 </template>
 
 <script lang="ts" setup>
+import { brand } from '@@/js/branding.js';
 import { computed, inject, ref } from 'vue';
 import * as mfm from 'mfm-js';
 import * as Misskey from 'misskey-js';

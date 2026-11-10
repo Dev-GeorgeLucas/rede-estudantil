@@ -11,6 +11,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 </template>
 
 <script lang="ts" setup>
+import { brand } from '@@/js/branding.js';
 import { computed, inject } from 'vue';
 
 import { DI } from '@/di.js';
@@ -32,7 +33,7 @@ const instance = props.instance ?? {
 	themeColor: (window.document.querySelector('meta[name="theme-color-orig"]') as HTMLMetaElement)?.content,
 };
 
-const faviconUrl = computed(() => props.instance ? mediaProxy.getProxiedImageUrlNullable(props.instance.faviconUrl, 'preview') : mediaProxy.getProxiedImageUrlNullable(serverMetadata.iconUrl, 'preview') ?? '/favicon.ico');
+const faviconUrl = computed(() => props.instance ? mediaProxy.getProxiedImageUrlNullable(props.instance.faviconUrl, 'preview') : mediaProxy.getProxiedImageUrlNullable(serverMetadata.iconUrl, 'preview') ?? brand.symbol);
 
 const themeColor = props.instance?.themeColor ?? serverMetadata.themeColor ?? '#777777';
 

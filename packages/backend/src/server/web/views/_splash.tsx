@@ -3,12 +3,14 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
+import { brandAssets } from '../branding.js';
+
 export function Splash(props: {
 	icon?: string | null;
 }) {
 	return (
 		<div id="splash">
-			<img id="splashIcon" src={props.icon || '/static-assets/splash.png'} />
+			<img alt="" id="splashIcon" src={props.icon || brandAssets.symbol} />
 			<div id="splashSpinner">
 				<svg class="spinner bg" viewBox="0 0 152 152" xmlns="http://www.w3.org/2000/svg">
 					<g transform="matrix(1,0,0,1,12,12)">
