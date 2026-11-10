@@ -19,13 +19,14 @@ SPDX-License-Identifier: AGPL-3.0-only
 				<div><MkCondensedLine :minScale="2 / 3">{{ acct }}</MkCondensedLine></div>
 			</div>
 		</div>
-		<img v-if="deviceMotionPermissionNeeded" v-flip :class="$style.logo" :src="misskeysvg" alt="Misskey Logo" @click="requestDeviceMotion"/>
-		<img v-else v-flip :class="$style.logo" :src="misskeysvg" alt="Misskey Logo"/>
+		<img v-if="deviceMotionPermissionNeeded" :class="$style.logo" :src="logoUrl" :alt="instance.logoImageUrl ? instance.name || brand.name : brand.name" @click="requestDeviceMotion"/>
+		<img v-else :class="$style.logo" :src="logoUrl" :alt="instance.logoImageUrl ? instance.name || brand.name : brand.name"/>
 	</div>
 </div>
 </template>
 
 <script lang="ts" setup>
+import { brand } from '@@/js/branding.js';
 import tinycolor from 'tinycolor2';
 import QRCodeStyling from 'qr-code-styling';
 import { computed, ref, shallowRef, watch, onMounted, onUnmounted, useTemplateRef } from 'vue';
@@ -34,10 +35,11 @@ import type { Directive } from 'vue';
 import { instance } from '@/instance.js';
 import { ensureSignin } from '@/i.js';
 import { userPage, userName } from '@/filters/user.js';
-import misskeysvg from '/client-assets/misskey.svg';
+import { store } from '@/store.js';
 import { getStaticImageUrl } from '@/utility/media-proxy.js';
 import { i18n } from '@/i18n.js';
 
+const logoUrl = computed(() => instance.logoImageUrl || (store.r.darkMode.value ? brand.logoDark : brand.logo));
 const $i = ensureSignin();
 
 const acct = computed(() => `@${$i.username}@${host}`);
@@ -51,7 +53,7 @@ const canShare = computed(() => navigator.canShare && navigator.canShare(shareDa
 
 const qrCodeEl = useTemplateRef('qrCodeEl');
 
-const qrColor = computed(() => tinycolor(instance.themeColor ?? '#86b300'));
+const qrColor = computed(() => tinycolor(instance.themeColor ?? '#23732E'));
 const qrHsl = computed(() => qrColor.value.toHsl());
 
 function share() {
@@ -65,7 +67,7 @@ const qrCodeInstance = new QRCodeStyling({
 	margin: 42,
 	type: 'canvas',
 	data: `${url}/users/${$i.id}`,
-	image: instance.iconUrl ? getStaticImageUrl(instance.iconUrl) : '/favicon.ico',
+	image: instance.iconUrl ? getStaticImageUrl(instance.iconUrl) : brand.symbol,
 	qrOptions: {
 		typeNumber: 0,
 		mode: 'Byte',
@@ -214,7 +216,7 @@ $avatarSize: 58px;
 .logo {
 	width: 100px;
 	margin: $s3 auto 0;
-	filter: drop-shadow(0 0 6px #0007);
+
 }
 </style>
 

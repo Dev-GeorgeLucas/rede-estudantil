@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
+import { buildManifest } from './branding.js';
 import { randomUUID } from 'node:crypto';
 import { resolve } from 'node:path';
 import { Inject, Injectable } from '@nestjs/common';
@@ -144,59 +145,7 @@ export class ClientServerService {
 
 	@bindThis
 	private async manifestHandler(reply: FastifyReply) {
-		let manifest = {
-			// 空文字列の場合右辺を使いたいため
-			// eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
-			'short_name': this.meta.shortName || this.meta.name || this.config.host,
-			// 空文字列の場合右辺を使いたいため
-			// eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
-			'name': this.meta.name || this.config.host,
-			'start_url': '/',
-			'display': 'standalone',
-			'background_color': '#313a42',
-			// 空文字列の場合右辺を使いたいため
-			// eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
-			'theme_color': this.meta.themeColor || '#86b300',
-			'icons': [{
-				// 空文字列の場合右辺を使いたいため
-				// eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
-				'src': this.meta.app192IconUrl || '/static-assets/icons/192.png',
-				'sizes': '192x192',
-				'type': 'image/png',
-				'purpose': 'maskable',
-			}, {
-				// 空文字列の場合右辺を使いたいため
-				// eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
-				'src': this.meta.app512IconUrl || '/static-assets/icons/512.png',
-				'sizes': '512x512',
-				'type': 'image/png',
-				'purpose': 'maskable',
-			}, {
-				'src': '/static-assets/splash.png',
-				'sizes': '300x300',
-				'type': 'image/png',
-				'purpose': 'any',
-			}],
-			'share_target': {
-				'action': '/share/',
-				'method': 'GET',
-				'enctype': 'application/x-www-form-urlencoded',
-				'params': {
-					'title': 'title',
-					'text': 'text',
-					'url': 'url',
-				},
-			},
-			'shortcuts': [{
-				'name': 'Safemode',
-				'url': '/?safemode=true',
-			}],
-		};
-
-		manifest = {
-			...manifest,
-			...JSON.parse(this.meta.manifestJsonOverride === '' ? '{}' : this.meta.manifestJsonOverride),
-		};
+		const manifest = buildManifest(this.meta);
 
 		reply.header('Cache-Control', 'max-age=300');
 		return (manifest);
@@ -289,11 +238,13 @@ export class ClientServerService {
 		});
 
 		fastify.get('/favicon.ico', async (request, reply) => {
-			return reply.sendFile('/favicon.ico', this.staticAssets);
+			reply.header('Cache-Control', 'no-cache');
+			return reply.sendFile('/ifeed-v1/favicon.ico', this.staticAssets);
 		});
 
 		fastify.get('/apple-touch-icon.png', async (request, reply) => {
-			return reply.sendFile('/apple-touch-icon.png', this.staticAssets);
+			reply.header('Cache-Control', 'no-cache');
+			return reply.sendFile('/ifeed-v1/apple-touch-icon.png', this.staticAssets);
 		});
 
 		fastify.get<{ Params: { path: string } }>('/fluent-emoji/:path(.*)', async (request, reply) => {

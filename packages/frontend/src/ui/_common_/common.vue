@@ -30,32 +30,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 	</div>
 </Transition>
 
-<Transition
-	:enterActiveClass="prefer.s.animation ? $style.transition_widgetsDrawerBg_enterActive : ''"
-	:leaveActiveClass="prefer.s.animation ? $style.transition_widgetsDrawerBg_leaveActive : ''"
-	:enterFromClass="prefer.s.animation ? $style.transition_widgetsDrawerBg_enterFrom : ''"
-	:leaveToClass="prefer.s.animation ? $style.transition_widgetsDrawerBg_leaveTo : ''"
->
-	<div
-		v-if="widgetsShowing"
-		:class="$style.widgetsDrawerBg"
-		class="_modalBg"
-		@click="widgetsShowing = false"
-		@touchstart.passive="widgetsShowing = false"
-	></div>
-</Transition>
-
-<Transition
-	:enterActiveClass="prefer.s.animation ? $style.transition_widgetsDrawer_enterActive : ''"
-	:leaveActiveClass="prefer.s.animation ? $style.transition_widgetsDrawer_leaveActive : ''"
-	:enterFromClass="prefer.s.animation ? $style.transition_widgetsDrawer_enterFrom : ''"
-	:leaveToClass="prefer.s.animation ? $style.transition_widgetsDrawer_leaveTo : ''"
->
-	<div v-if="widgetsShowing" :class="$style.widgetsDrawer">
-		<button class="_button" :class="$style.widgetsCloseButton" @click="widgetsShowing = false"><i class="ti ti-x"></i></button>
-		<XWidgets/>
-	</div>
-</Transition>
+<XWidgetPanel v-model="widgetsShowing" :container="widgetsContainer"/>
 
 <component
 	:is="popup.component"
@@ -120,12 +95,13 @@ import { prefer } from '@/preferences.js';
 import { globalEvents } from '@/events.js';
 import { store } from '@/store.js';
 import XNavbar from '@/ui/_common_/navbar.vue';
+import XWidgetPanel from './widget-panel.vue';
 
 // Keep monitoring alive even while the mobile drawer is closed.
 usePendingAbuseReports();
 
 const XStreamIndicator = defineAsyncComponent(() => import('./stream-indicator.vue'));
-const XWidgets = defineAsyncComponent(() => import('./widgets.vue'));
+defineProps<{ widgetsContainer?: HTMLElement | null }>();
 
 const drawerMenuShowing = defineModel<boolean>('drawerMenuShowing');
 const widgetsShowing = defineModel<boolean>('widgetsShowing');
@@ -199,28 +175,6 @@ if ($i) {
 	transform: translateX(-240px);
 }
 
-.transition_widgetsDrawerBg_enterActive,
-.transition_widgetsDrawerBg_leaveActive {
-	opacity: 1;
-	transition: opacity 300ms cubic-bezier(0.23, 1, 0.32, 1);
-}
-.transition_widgetsDrawerBg_enterFrom,
-.transition_widgetsDrawerBg_leaveTo {
-	opacity: 0;
-}
-
-.transition_widgetsDrawer_enterActive,
-.transition_widgetsDrawer_leaveActive {
-	opacity: 1;
-	transform: translateX(0);
-	transition: transform 300ms cubic-bezier(0.23, 1, 0.32, 1), opacity 300ms cubic-bezier(0.23, 1, 0.32, 1);
-}
-.transition_widgetsDrawer_enterFrom,
-.transition_widgetsDrawer_leaveTo {
-	opacity: 0;
-	transform: translateX(-240px);
-}
-
 .transition_notification_move,
 .transition_notification_enterActive,
 .transition_notification_leaveActive {
@@ -245,36 +199,6 @@ if ($i) {
 	left: 0;
 	z-index: 1001;
 	height: 100dvh;
-}
-
-.widgetsDrawerBg {
-	z-index: 1001;
-}
-
-.widgetsDrawer {
-	position: fixed;
-	top: 0;
-	left: 0;
-	z-index: 1001;
-	width: 310px;
-	height: 100dvh;
-	padding: var(--MI-margin) var(--MI-margin) calc(var(--MI-margin) + env(safe-area-inset-bottom, 0px)) !important;
-	box-sizing: border-box;
-	overflow: auto;
-	overscroll-behavior: contain;
-	background: var(--MI_THEME-bg);
-}
-
-.widgetsCloseButton {
-	padding: 8px;
-	display: block;
-	margin: 0 auto;
-}
-
-@media (min-width: 370px) {
-	.widgetsCloseButton {
-		display: none;
-	}
 }
 
 .notifications {

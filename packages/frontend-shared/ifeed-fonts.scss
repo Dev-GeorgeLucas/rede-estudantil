@@ -1,0 +1,17 @@
+/*
+ * SPDX-FileCopyrightText: syuilo and misskey-project
+ * SPDX-License-Identifier: AGPL-3.0-only
+ */
+
+/* Local SIL OFL 1.1 fonts; notices are beside the WOFF2 files. */
+:root { --MI-fontHeading: 'IFEED Montserrat', 'IFEED Open Sans', sans-serif; }
+html.useSystemFont { --MI-fontHeading: system-ui; }
+
+@font-face {
+	font-family: 'IFEED Open Sans'; font-style: normal; font-weight: 400 600;
+	font-display: swap; src: url('./assets/fonts/ifeed-v1/opensans.woff2') format('woff2');
+}
+@font-face {
+	font-family: 'IFEED Montserrat'; font-style: normal; font-weight: 700 800;
+	font-display: swap; src: url('./assets/fonts/ifeed-v1/montserrat.woff2') format('woff2');
+}

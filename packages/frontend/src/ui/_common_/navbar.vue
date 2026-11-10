@@ -7,14 +7,14 @@ SPDX-License-Identifier: AGPL-3.0-only
 <div :class="[$style.root, { [$style.iconOnly]: iconOnly }]">
 	<div :class="$style.body">
 		<div :class="$style.top">
-			<button v-tooltip.noDelay.right="instance.name ?? i18n.ts.instance" class="_button" :class="$style.instance" @click="openInstanceMenu">
-				<img :src="instance.iconUrl || '/favicon.ico'" alt="" :class="$style.instanceIcon" style="view-transition-name: navbar-serverIcon;"/>
+			<button v-tooltip.noDelay.right="instance.name ?? brand.name" :aria-label="instance.name ?? brand.name" class="_button" :class="$style.instance" @click="openInstanceMenu">
+				<img :src="instance.iconUrl || brand.symbol" alt="" :class="$style.instanceIcon" style="view-transition-name: navbar-serverIcon;"/>
 			</button>
 			<button v-if="!iconOnly" v-tooltip.noDelay.right="i18n.ts.realtimeMode" class="_button" :class="[$style.realtimeMode, store.r.realtimeMode.value ? $style.on : null]" @click="toggleRealtimeMode">
 				<i v-if="store.r.realtimeMode.value" class="ti ti-bolt ti-fw"></i>
 				<i v-else class="ti ti-bolt-off ti-fw"></i>
 			</button>
-			<button v-if="!iconOnly && showWidgetButton" v-tooltip.noDelay.right="i18n.ts.widgets" class="_button" :class="[$style.widget]" @click="() => emit('widgetButtonClick')">
+			<button v-if="!iconOnly && showWidgetButton" v-tooltip.noDelay.right="i18n.ts.widgets" :aria-label="i18n.ts.widgets" class="_button" :class="[$style.widget]" @click="() => emit('widgetButtonClick')">
 				<i class="ti ti-apps ti-fw"></i>
 			</button>
 		</div>
@@ -42,7 +42,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 				</component>
 			</template>
 			<div :class="$style.divider"></div>
-			<XAdminAccess v-if="$i != null && ($i.isAdmin || $i.isModerator)" :compact="iconOnly">
+			<XAdminAccess v-if="$i != null && ($i.isAdmin || $i.isModerator)" :compact="iconOnly" :itemClass="$style.item" :iconClass="$style.itemIcon" :textClass="$style.itemText" :activeClass="$style.active">
 				<MkA v-tooltip.noDelay.right="i18n.ts.controlPanel" :class="$style.item" :activeClass="$style.active" to="/admin" :aria-label="i18n.ts.controlPanel">
 					<i :class="$style.itemIcon" class="ti ti-dashboard ti-fw" style="view-transition-name: navbar-controlPanel;"></i><span :class="$style.itemText">{{ i18n.ts.controlPanel }}</span>
 				</MkA>
@@ -56,7 +56,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 			</MkA>
 		</div>
 		<div :class="$style.bottom">
-			<button v-if="iconOnly && showWidgetButton" v-tooltip.noDelay.right="i18n.ts.widgets" class="_button" :class="[$style.widget]" @click="() => emit('widgetButtonClick')">
+			<button v-if="iconOnly && showWidgetButton" v-tooltip.noDelay.right="i18n.ts.widgets" :aria-label="i18n.ts.widgets" class="_button" :class="[$style.widget]" @click="() => emit('widgetButtonClick')">
 				<i class="ti ti-apps ti-fw"></i>
 			</button>
 			<button v-if="iconOnly" v-tooltip.noDelay.right="i18n.ts.realtimeMode" class="_button" :class="[$style.realtimeMode, store.r.realtimeMode.value ? $style.on : null]" @click="toggleRealtimeMode">
@@ -106,6 +106,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 </template>
 
 <script lang="ts" setup>
+import { brand } from '@@/js/branding.js';
 import { computed, defineAsyncComponent, ref, watch } from 'vue';
 import { openInstanceMenu } from './common.js';
 import XAdminAccess from './admin-access.vue';

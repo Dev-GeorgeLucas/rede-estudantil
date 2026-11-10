@@ -26,7 +26,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 		</div>
 	</button>
 
-	<button :class="$style.item" class="_button" @click="widgetsShowing = true">
+	<button :class="$style.item" class="_button" :aria-label="i18n.ts.widgets" @click="widgetsShowing = true">
 		<div :class="$style.itemInner">
 			<i :class="$style.itemIcon" class="ti ti-apps"></i>
 		</div>

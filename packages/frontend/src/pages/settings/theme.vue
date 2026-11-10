@@ -13,9 +13,8 @@ SPDX-License-Identifier: AGPL-3.0-only
 		<div v-adaptive-border class="rfqxtzch _panel">
 			<div class="toggle">
 				<div class="toggleWrapper">
-					<div class="toggle" :class="store.r.darkMode.value ? 'checked' : null" @click="toggleDarkMode()">
-						<span class="before">{{ i18n.ts.light }}</span>
-						<span class="after">{{ i18n.ts.dark }}</span>
+					<span class="before" :class="{ current: !store.r.darkMode.value }">{{ i18n.ts.light }}</span>
+					<button type="button" class="_button toggle" :class="[$style.modeToggle, store.r.darkMode.value ? 'checked' : null]" role="switch" :aria-label="i18n.ts.dark" :aria-checked="store.r.darkMode.value" @click="toggleDarkMode()">
 						<span class="toggle__handler">
 							<span class="crater crater--1"></span>
 							<span class="crater crater--2"></span>
@@ -27,7 +26,8 @@ SPDX-License-Identifier: AGPL-3.0-only
 						<span class="star star--4"></span>
 						<span class="star star--5"></span>
 						<span class="star star--6"></span>
-					</div>
+					</button>
+					<span class="after" :class="{ current: store.r.darkMode.value }">{{ i18n.ts.dark }}</span>
 				</div>
 			</div>
 			<div class="sync">
@@ -207,8 +207,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 <script lang="ts" setup>
 import { computed, ref, watch } from 'vue';
 import JSON5 from 'json5';
-import defaultLightTheme from '@@/themes/l-light.json5';
-import defaultDarkTheme from '@@/themes/d-green-lime.json5';
+import { defaultTheme } from '@@/js/default-theme.js';
 import { isSafeMode } from '@@/js/config.js';
 import type { Theme } from '@@/js/theme.js';
 import * as os from '@/os.js';
@@ -236,19 +235,19 @@ getBuiltinThemes().then(themes => {
 	builtinThemes.value = themes;
 });
 
-const instanceDarkTheme = computed<Theme | null>(() => instance.defaultDarkTheme ? JSON5.parse(instance.defaultDarkTheme) : null);
+const instanceDarkTheme = computed<Theme | null>(() => instance.defaultDarkTheme ? defaultTheme('dark', instance.defaultDarkTheme) : null);
 const installedDarkThemes = computed(() => installedThemes.value.filter(t => t.base === 'dark' || t.kind === 'dark'));
 const builtinDarkThemes = computed(() => builtinThemes.value.filter(t => t.base === 'dark' || t.kind === 'dark'));
-const instanceLightTheme = computed<Theme | null>(() => instance.defaultLightTheme ? JSON5.parse(instance.defaultLightTheme) : null);
+const instanceLightTheme = computed<Theme | null>(() => instance.defaultLightTheme ? defaultTheme('light', instance.defaultLightTheme) : null);
 const installedLightThemes = computed(() => installedThemes.value.filter(t => t.base === 'light' || t.kind === 'light'));
 const builtinLightThemes = computed(() => builtinThemes.value.filter(t => t.base === 'light' || t.kind === 'light'));
 const themes = computed(() => uniqueBy([instanceDarkTheme.value, instanceLightTheme.value, ...builtinThemes.value, ...installedThemes.value].filter(x => x != null), theme => theme.id));
 
 const darkTheme = prefer.r.darkTheme;
-const darkThemeName = computed(() => darkTheme.value?.name ?? defaultDarkTheme.name);
+const darkThemeName = computed(() => darkTheme.value?.name ?? defaultTheme('dark', instance.defaultDarkTheme).name);
 const darkThemeId = computed({
 	get() {
-		return darkTheme.value ? darkTheme.value.id : defaultDarkTheme.id;
+		return darkTheme.value ? darkTheme.value.id : defaultTheme('dark', instance.defaultDarkTheme).id;
 	},
 	set(id) {
 		const t = themes.value.find(x => x.id === id);
@@ -258,10 +257,10 @@ const darkThemeId = computed({
 	},
 });
 const lightTheme = prefer.r.lightTheme;
-const lightThemeName = computed(() => lightTheme.value?.name ?? defaultLightTheme.name);
+const lightThemeName = computed(() => lightTheme.value?.name ?? defaultTheme('light', instance.defaultLightTheme).name);
 const lightThemeId = computed({
 	get() {
-		return lightTheme.value ? lightTheme.value.id : defaultLightTheme.id;
+		return lightTheme.value ? lightTheme.value.id : defaultTheme('light', instance.defaultLightTheme).id;
 	},
 	set(id) {
 		const t = themes.value.find(x => x.id === id);
@@ -373,6 +372,11 @@ definePage(() => ({
 </script>
 
 <style module>
+.modeToggle:focus-visible {
+	outline: 2px solid var(--MI_THEME-focus);
+	outline-offset: 4px;
+}
+
 .themeSelect {
 	display: grid;
 	grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -429,6 +433,7 @@ definePage(() => ({
 
 	> .toggle {
 		position: relative;
+		container-type: inline-size;
 		padding: 26px 0;
 		text-align: center;
 
@@ -441,17 +446,37 @@ definePage(() => ({
 		}
 
 		> .toggleWrapper {
-			display: inline-block;
-			text-align: left;
-			overflow: clip;
-			padding: 0 100px;
-			vertical-align: bottom;
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) 98px minmax(0, 1fr);
+			align-items: center;
+			gap: 12px;
+			box-sizing: border-box;
+			width: 300px;
+			max-width: 100%;
+			margin: auto;
+			padding: 0 12px;
+		}
+
+		.before, .after {
+			min-width: 0;
+			overflow-wrap: anywhere;
+			color: var(--MI_THEME-fg);
+			&.current { color: var(--MI_THEME-accent); }
+		}
+
+		@container (max-width: 220px) {
+			> .toggleWrapper { grid-template-columns: 1fr 1fr; }
+			.toggle { grid-row: 1; grid-column: 1 / -1; justify-self: center; }
 		}
 
 		.toggle {
 			cursor: pointer;
 			display: inline-block;
 			position: relative;
+			box-sizing: border-box;
+			padding: 0;
+			border: 0;
+			text-align: left;
 			width: 90px;
 			height: 50px;
 			margin: 4px; // focus用のアウトライン
@@ -459,32 +484,8 @@ definePage(() => ({
 			border-radius: 90px - 6;
 			transition: background-color 200ms cubic-bezier(0.445, 0.05, 0.55, 0.95) !important;
 
-			> .before, > .after {
-				position: absolute;
-				top: 15px;
-				transition: color 1s ease;
-			}
-
-			> .before {
-				left: -70px;
-				color: var(--MI_THEME-accent);
-			}
-
-			> .after {
-				right: -68px;
-				color: var(--MI_THEME-fg);
-			}
-
 			&.checked {
 				background-color: #749DD6;
-
-				> .before {
-					color: var(--MI_THEME-fg);
-				}
-
-				> .after {
-					color: var(--MI_THEME-accent);
-				}
 
 				.toggle__handler {
 					background-color: #FFE5B5;
@@ -533,7 +534,7 @@ definePage(() => ({
 
 		.toggle__handler {
 			display: inline-block;
-			position: relative;
+			position: absolute;
 			z-index: 1;
 			top: 3px;
 			left: 3px;
@@ -638,6 +639,14 @@ definePage(() => ({
 			width: 2px;
 			height: 2px;
 			transform: translate3d(3px,0,0);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		> .toggle {
+			.toggle, .toggle > *, .toggle .crater, .toggle.checked > .star {
+				transition: none !important;
+			}
 		}
 	}
 

@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
+import { brandAssets, defaultThemeColor } from '../branding.js';
 import { comment, defaultDescription } from '@/server/web/views/_.js';
 import { Splash } from '@/server/web/views/_splash.js';
 import type { CommonProps } from '@/server/web/views/_.js';
@@ -37,18 +38,18 @@ export function Layout(props: PropsWithChildren<CommonProps<{
 			<html>
 				<head>
 					<meta charset="UTF-8" />
-					<meta name="application-name" content="Misskey" />
+					<meta name="application-name" content={props.instanceName || 'IFEED'} />
 					<meta name="referer" content="origin" />
-					<meta name="theme-color" content={props.themeColor ?? '#86b300'} />
-					<meta name="theme-color-orig" content={props.themeColor ?? '#86b300'} />
-					<meta property="og:site_name" content={props.instanceName || 'Misskey'} />
+					<meta name="theme-color" content={props.themeColor ?? defaultThemeColor} />
+					<meta name="theme-color-orig" content={props.themeColor ?? defaultThemeColor} />
+					<meta property="og:site_name" content={props.instanceName || 'IFEED'} />
 					<meta property="instance_url" content={props.instanceUrl} />
 					<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
 					<meta name="format-detection" content="telephone=no,date=no,address=no,email=no,url=no" />
-					<link rel="icon" href={props.icon || '/favicon.ico'} />
-					<link rel="apple-touch-icon" href={props.appleTouchIcon || '/apple-touch-icon.png'} />
-					<link rel="manifest" href="/manifest.json" />
-					<link rel="search" type="application/opensearchdescription+xml" title={props.title || 'Misskey'} href={`${props.config.url}/opensearch.xml`} />
+					<link rel="icon" href={props.icon || brandAssets.favicon} />
+					<link rel="apple-touch-icon" href={props.appleTouchIcon || brandAssets.appleTouch} />
+					<link rel="manifest" href="/manifest.json?v=ifeed-v1" />
+					<link rel="search" type="application/opensearchdescription+xml" title={props.title || 'IFEED'} href={`${props.config.url}/opensearch.xml`} />
 					{props.serverErrorImageUrl != null ? <link rel="prefetch" as="image" href={props.serverErrorImageUrl} /> : null}
 					{props.infoImageUrl != null ? <link rel="prefetch" as="image" href={props.infoImageUrl} /> : null}
 					{props.notFoundImageUrl != null ? <link rel="prefetch" as="image" href={props.notFoundImageUrl} /> : null}
@@ -59,7 +60,7 @@ export function Layout(props: PropsWithChildren<CommonProps<{
 						<link rel="stylesheet" href={`/vite/${href}`} />
 					))}
 
-					{props.titleSlot ?? <title safe>{props.title || 'Misskey'}</title>}
+					{props.titleSlot ?? <title safe>{props.title || 'IFEED'}</title>}
 
 					{props.noindex ? <meta name="robots" content="noindex" /> : null}
 
@@ -69,7 +70,7 @@ export function Layout(props: PropsWithChildren<CommonProps<{
 
 					{props.ogSlot ?? (
 						<>
-							<meta property="og:title" content={props.title || 'Misskey'} />
+							<meta property="og:title" content={props.title || 'IFEED'} />
 							<meta property="og:description" content={props.desc || defaultDescription} />
 							{props.img != null ? <meta property="og:image" content={props.img} /> : null}
 							<meta property="twitter:card" content="summary" />

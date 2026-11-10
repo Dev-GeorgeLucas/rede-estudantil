@@ -7,8 +7,8 @@ SPDX-License-Identifier: AGPL-3.0-only
 <div :class="[$style.root, acrylic ? $style.acrylic : null]">
 	<div :class="$style.body">
 		<div>
-			<button v-click-anime :class="[$style.item, $style.instance]" class="_button" @click="openInstanceMenu">
-				<img :class="$style.instanceIcon" :src="instance.iconUrl ?? '/favicon.ico'" draggable="false"/>
+			<button v-click-anime :aria-label="instance.name || brand.name" :class="[$style.item, $style.instance]" class="_button" @click="openInstanceMenu">
+				<img alt="" :class="$style.instanceIcon" :src="instance.iconUrl ?? brand.symbol" draggable="false"/>
 			</button>
 			<MkA v-click-anime v-tooltip="i18n.ts.timeline" :class="$style.item" :activeClass="$style.active" to="/feed" :aria-label="i18n.ts.timeline">
 				<i :class="$style.itemIcon" class="ti ti-home ti-fw"></i>
@@ -21,7 +21,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 				</component>
 			</template>
 			<div :class="$style.divider"></div>
-			<XAdminAccess v-if="$i && ($i.isAdmin || $i.isModerator)" compact horizontal>
+			<XAdminAccess v-if="$i && ($i.isAdmin || $i.isModerator)" compact horizontal :itemClass="$style.item" :iconClass="$style.itemIcon" :activeClass="$style.active">
 				<MkA v-click-anime v-tooltip="i18n.ts.controlPanel" :class="$style.item" :activeClass="$style.active" to="/admin" :aria-label="i18n.ts.controlPanel" :behavior="settingsWindowed ? 'window' : null">
 					<i :class="$style.itemIcon" class="ti ti-dashboard ti-fw"></i>
 				</MkA>
@@ -49,6 +49,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 </template>
 
 <script lang="ts" setup>
+import { brand } from '@@/js/branding.js';
 import { computed, defineAsyncComponent, onMounted, ref } from 'vue';
 import { openInstanceMenu } from './common.js';
 import XAdminAccess from './admin-access.vue';
@@ -201,7 +202,7 @@ onMounted(() => {
 
 .instanceIcon {
 	display: inline-block;
-	width: 24px;
+	width: 38px;
 	position: absolute;
 	top: 0;
 	right: 0;

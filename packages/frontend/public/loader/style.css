@@ -4,6 +4,19 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
+:root {
+	--MI_THEME-bg: #F2F4F5;
+	--MI_THEME-fg: #252B26;
+	--MI_THEME-accent: #23732E;
+}
+@media (prefers-color-scheme: dark) {
+	:root {
+		--MI_THEME-bg: #0D120F;
+		--MI_THEME-fg: #F2F4F5;
+		--MI_THEME-accent: #78D587;
+	}
+}
+
 html {
 	background-color: var(--MI_THEME-bg);
 	color: var(--MI_THEME-fg);
